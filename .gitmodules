@@ -1,0 +1,3 @@
+[submodule "aart_anil_generic_brain/revolve2"]
+	path = aart_anil_generic_brain/revolve2
+	url = git@github.com:surgura/revolve2.git
