@@ -1,0 +1,3 @@
+[submodule "jlo_learners/revolve2"]
+	path = jlo_learners/revolve2
+	url = git@github.com:onerachel/revolve2.git
