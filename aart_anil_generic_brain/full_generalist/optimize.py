@@ -13,14 +13,14 @@ from typing import Tuple, List
 def make_body() -> Tuple[Body, List[int]]:
     body = Body()
     body.core.left = ActiveHinge(0.0)
-    body.core.left.front = ActiveHinge(math.pi / 2.0)
-    body.core.left.front.front = Brick(0.0)
+    body.core.left.attachment = ActiveHinge(math.pi / 2.0)
+    body.core.left.attachment.attachment = Brick(0.0)
 
     body.finalize()
 
-    output_map = []
+    dof_map = {body.core.left.id: 0, body.core.left.attachment.id: 1}
 
-    return body, output_map
+    return body, dof_map
 
 
 async def main() -> None:
@@ -48,10 +48,10 @@ async def main() -> None:
     # process id generator
     process_id_gen = ProcessIdGen()
 
-    body, output_map = make_body()
+    body, dof_map = make_body()
 
     robot_bodies = [body]
-    output_maps = [output_map]
+    dof_maps = [dof_map]
 
     process_id = process_id_gen.gen()
     maybe_optimizer = await Optimizer.from_database(
@@ -60,7 +60,7 @@ async def main() -> None:
         process_id_gen=process_id_gen,
         rng=rng,
         robot_bodies=robot_bodies,
-        output_maps=output_maps,
+        dof_maps=dof_maps,
         simulation_time=SIMULATION_TIME,
         sampling_frequency=SAMPLING_FREQUENCY,
         control_frequency=CONTROL_FREQUENCY,
@@ -82,7 +82,7 @@ async def main() -> None:
             SIGMA,
             LEARNING_RATE,
             robot_bodies=robot_bodies,
-            output_maps=output_maps,
+            dof_maps=dof_maps,
             simulation_time=SIMULATION_TIME,
             sampling_frequency=SAMPLING_FREQUENCY,
             control_frequency=CONTROL_FREQUENCY,

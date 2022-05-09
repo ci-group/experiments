@@ -1,6 +1,6 @@
 import math
 from random import Random
-from typing import List, Tuple
+from typing import List, Dict
 
 import numpy as np
 import numpy.typing as npt
@@ -30,7 +30,7 @@ class Optimizer(OpenaiESOptimizer):
     DOF_RANGE = 1
 
     _bodies: List[Body]
-    _output_maps: List[List[int]]
+    _dof_maps: List[Dict[int, int]]
 
     _runner: Runner
     _controllers: List[ActorController]
@@ -52,14 +52,14 @@ class Optimizer(OpenaiESOptimizer):
         sigma: float,
         learning_rate: float,
         robot_bodies: List[Body],
-        output_maps: List[List[int]],
+        dof_maps: List[Dict[int, int]],
         simulation_time: int,
         sampling_frequency: float,
         control_frequency: float,
         num_generations: int,
     ) -> None:
         self._bodies = robot_bodies
-        self._output_maps = output_maps
+        self._dof_maps = dof_maps
 
         nprng = np.random.Generator(
             np.random.PCG64(rng.randint(0, 2**63))
@@ -97,7 +97,7 @@ class Optimizer(OpenaiESOptimizer):
         process_id_gen: ProcessIdGen,
         rng: Random,
         robot_bodies: List[Body],
-        output_maps: List[List[int]],
+        dof_maps: List[Dict[int, int]],
         simulation_time: int,
         sampling_frequency: float,
         control_frequency: float,
@@ -113,7 +113,7 @@ class Optimizer(OpenaiESOptimizer):
             return False
 
         self._bodies = robot_bodies
-        self._output_maps = output_maps
+        self._dof_maps = dof_maps
 
         self._init_runner()
 
@@ -143,10 +143,11 @@ class Optimizer(OpenaiESOptimizer):
 
         self._controllers = []
 
-        for robot, output_map in zip(self._bodies, self._output_maps):
+        for robot, dof_map in zip(self._bodies, self._dof_maps):
             for params in population:
                 # TODO make this a parameter
-                state_size = 4
+                num_output_neurons = 2
+                state_size = num_output_neurons * 2
                 weight_matrix = np.array(
                     [
                         [0.0, params[2], params[0], 0.0],
@@ -155,14 +156,15 @@ class Optimizer(OpenaiESOptimizer):
                         [0.0, -params[1], 0.0, 0.0],
                     ]
                 )
-                initial_state = np.zeros(state_size)
+                initial_state = np.array([math.sqrt(2) / 2.0] * state_size)
 
                 inner_brain = StaticCpgBrain(
                     initial_state,
+                    num_output_neurons,
                     weight_matrix,
-                    self.DOF_RANGE,
+                    np.array([self.DOF_RANGE] * num_output_neurons),
                 )
-                brain = DofMapBrain(inner_brain, output_map)
+                brain = DofMapBrain(inner_brain, dof_map)
                 actor, controller = ModularRobot(
                     robot, brain
                 ).make_actor_and_controller()
@@ -190,8 +192,8 @@ class Optimizer(OpenaiESOptimizer):
         fitnesses = np.array(
             [
                 self._calculate_fitness(
-                    states[0][1].envs[i].actor_states[0],
-                    states[-1][1].envs[i].actor_states[0],
+                    states[0].envs[i].actor_states[0],
+                    states[-1].envs[i].actor_states[0],
                 )
                 for i in range(len(population) * len(self._bodies))
             ]

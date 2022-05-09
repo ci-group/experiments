@@ -4,21 +4,19 @@ Active hinges are connected if they are within 2 jumps in the modular robot tree
 That means, NOT grid coordinates, but tree distance.
 """
 
-import math
-from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple
+from typing import List
 
 import numpy as np
 import numpy.typing as npt
 from revolve2.actor_controllers.cpg import Cpg as ControllerCpg
 
 from revolve2.actor_controller import ActorController
-from revolve2.core.modular_robot import ActiveHinge, Body, Brain
+from revolve2.core.modular_robot import Body, Brain
 import numpy as np
 import numpy.typing as npt
 
 
-class StaticCpgBrain(Brain, ABC):
+class StaticCpgBrain(Brain):
     _initial_state: npt.NDArray[np.float_]
     _num_output_neurons: int
     _weight_matrix: npt.NDArray[np.float_]
