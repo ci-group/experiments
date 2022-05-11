@@ -27,9 +27,6 @@ from revolve2.actor_controllers.cpg import CpgNetworkStructure
 
 
 class Optimizer(OpenaiESOptimizer):
-    NUM_WEIGHTS = 3
-    DOF_RANGE = 1
-
     _bodies: List[Body]
     _dof_maps: List[Dict[int, int]]
 
@@ -62,14 +59,11 @@ class Optimizer(OpenaiESOptimizer):
         num_generations: int,
         cpg_network_structure: CpgNetworkStructure,
     ) -> None:
-        self._bodies = robot_bodies
-        self._dof_maps = dof_maps
-
         nprng = np.random.Generator(
             np.random.PCG64(rng.randint(0, 2**63))
         )  # rng is currently not numpy, but this would be very convenient. do this until that is resolved.
         initial_mean = nprng.uniform(
-            size=self.NUM_WEIGHTS,
+            size=cpg_network_structure.num_params,
             low=0,
             high=1.0,
         )
@@ -88,6 +82,8 @@ class Optimizer(OpenaiESOptimizer):
 
         self._init_runner()
 
+        self._bodies = robot_bodies
+        self._dof_maps = dof_maps
         self._simulation_time = simulation_time
         self._sampling_frequency = sampling_frequency
         self._control_frequency = control_frequency
@@ -118,11 +114,10 @@ class Optimizer(OpenaiESOptimizer):
         ):
             return False
 
-        self._bodies = robot_bodies
-        self._dof_maps = dof_maps
-
         self._init_runner()
 
+        self._bodies = robot_bodies
+        self._dof_maps = dof_maps
         self._simulation_time = simulation_time
         self._sampling_frequency = sampling_frequency
         self._control_frequency = control_frequency
@@ -158,9 +153,7 @@ class Optimizer(OpenaiESOptimizer):
                 initial_state = self._cpg_network_structure.make_uniform_state(
                     math.sqrt(2) / 2.0
                 )
-                dof_ranges = self._cpg_network_structure.make_uniform_dof_ranges(
-                    self.DOF_RANGE
-                )
+                dof_ranges = self._cpg_network_structure.make_uniform_dof_ranges(1.0)
 
                 inner_brain = BrainCpgNetworkStatic(
                     initial_state,
@@ -212,8 +205,6 @@ class Optimizer(OpenaiESOptimizer):
 
     @staticmethod
     def _calculate_fitness(begin_state: ActorState, end_state: ActorState) -> float:
-        # TODO simulation can continue slightly passed the defined sim time.
-
         # distance traveled on the xy plane
         return math.sqrt(
             (begin_state.position[0] - end_state.position[0]) ** 2

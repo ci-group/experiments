@@ -11,7 +11,7 @@ from typing import Tuple, List
 from revolve2.actor_controllers.cpg import CpgNetworkStructure, CpgPair
 
 
-def make_body() -> Tuple[Body, List[int]]:
+def make_body_1() -> Tuple[Body, List[int]]:
     body = Body()
     body.core.left = ActiveHinge(0.0)
     body.core.left.attachment = ActiveHinge(math.pi / 2.0)
@@ -22,6 +22,38 @@ def make_body() -> Tuple[Body, List[int]]:
     dof_map = {body.core.left.id: 0, body.core.left.attachment.id: 1}
 
     return body, dof_map
+
+
+def make_body_2() -> Tuple[Body, List[int]]:
+    body = Body()
+    body.core.left = ActiveHinge(0.0)
+    body.core.left.attachment = ActiveHinge(math.pi / 2.0)
+    body.core.left.attachment.attachment = Brick(0.0)
+    body.core.right = ActiveHinge(0.0)
+    body.core.right.attachment = ActiveHinge(math.pi / 2.0)
+    body.core.right.attachment.attachment = Brick(0.0)
+
+    body.finalize()
+
+    dof_map = {
+        body.core.left.id: 0,
+        body.core.left.attachment.id: 1,
+        body.core.right.id: 2,
+        body.core.right.attachment.id: 3,
+    }
+
+    return body, dof_map
+
+
+def make_bodies() -> Tuple[List[Body], List[List[int]]]:
+    """
+    :returns: Bodies and corresponding maps from active hinge id to dof index
+    """
+
+    body1, dof_map1 = make_body_1()
+    body2, dof_map2 = make_body_2()
+
+    return [body1, body2], [dof_map1, dof_map2]
 
 
 async def main() -> None:
@@ -49,13 +81,12 @@ async def main() -> None:
     # process id generator
     process_id_gen = ProcessIdGen()
 
-    body, dof_map = make_body()
+    bodies, dof_maps = make_bodies()
 
-    robot_bodies = [body]
-    dof_maps = [dof_map]
-
-    cpgs = CpgNetworkStructure.make_cpgs(2)
-    cpg_network_structure = CpgNetworkStructure(cpgs, set([CpgPair(cpgs[0], cpgs[1])]))
+    cpgs = CpgNetworkStructure.make_cpgs(4)
+    cpg_network_structure = CpgNetworkStructure(
+        cpgs, set([CpgPair(cpgs[0], cpgs[1]), CpgPair(cpgs[2], cpgs[3])])
+    )
 
     process_id = process_id_gen.gen()
     maybe_optimizer = await Optimizer.from_database(
@@ -63,7 +94,7 @@ async def main() -> None:
         process_id=process_id,
         process_id_gen=process_id_gen,
         rng=rng,
-        robot_bodies=robot_bodies,
+        robot_bodies=bodies,
         dof_maps=dof_maps,
         simulation_time=SIMULATION_TIME,
         sampling_frequency=SAMPLING_FREQUENCY,
@@ -86,7 +117,7 @@ async def main() -> None:
             POPULATION_SIZE,
             SIGMA,
             LEARNING_RATE,
-            robot_bodies=robot_bodies,
+            robot_bodies=bodies,
             dof_maps=dof_maps,
             simulation_time=SIMULATION_TIME,
             sampling_frequency=SAMPLING_FREQUENCY,
