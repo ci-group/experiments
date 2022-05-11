@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from revolve2.actor_controller import ActorController
 from revolve2.core.modular_robot import Body, ModularRobot
-from static_cpg_brain import StaticCpgBrain
+from revolve2.core.modular_robot.brains import BrainCpgNetworkStatic
 from revolve2.core.optimization import ProcessIdGen
 from revolve2.core.optimization.ea.openai_es import OpenaiESOptimizer
 from revolve2.core.physics.running import (
@@ -162,7 +162,7 @@ class Optimizer(OpenaiESOptimizer):
                     self.DOF_RANGE
                 )
 
-                inner_brain = StaticCpgBrain(
+                inner_brain = BrainCpgNetworkStatic(
                     initial_state,
                     self._cpg_network_structure.num_cpgs,
                     weight_matrix,
