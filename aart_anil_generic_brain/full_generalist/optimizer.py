@@ -23,7 +23,7 @@ from revolve2.core.physics.running import (
 )
 from revolve2.runners.isaacgym import LocalRunner
 from dof_map_brain import DofMapBrain
-from revolve2.actor_controllers.cpg import CpgIndex, CpgParamUtil, CpgPair
+from revolve2.actor_controllers.cpg import CpgNetworkStructure
 
 
 class Optimizer(OpenaiESOptimizer):
@@ -42,6 +42,8 @@ class Optimizer(OpenaiESOptimizer):
 
     _num_generations: int
 
+    _cpg_network_structure: CpgNetworkStructure
+
     async def ainit_new(  # type: ignore # TODO for now ignoring mypy complaint about LSP problem, override parent's ainit
         self,
         database: AsyncEngine,
@@ -58,6 +60,7 @@ class Optimizer(OpenaiESOptimizer):
         sampling_frequency: float,
         control_frequency: float,
         num_generations: int,
+        cpg_network_structure: CpgNetworkStructure,
     ) -> None:
         self._bodies = robot_bodies
         self._dof_maps = dof_maps
@@ -89,6 +92,7 @@ class Optimizer(OpenaiESOptimizer):
         self._sampling_frequency = sampling_frequency
         self._control_frequency = control_frequency
         self._num_generations = num_generations
+        self._cpg_network_structure = cpg_network_structure
 
     async def ainit_from_database(  # type: ignore # see comment at ainit_new
         self,
@@ -103,6 +107,7 @@ class Optimizer(OpenaiESOptimizer):
         sampling_frequency: float,
         control_frequency: float,
         num_generations: int,
+        cpg_network_structure: CpgNetworkStructure,
     ) -> bool:
         if not await super().ainit_from_database(
             database=database,
@@ -122,6 +127,7 @@ class Optimizer(OpenaiESOptimizer):
         self._sampling_frequency = sampling_frequency
         self._control_frequency = control_frequency
         self._num_generations = num_generations
+        self._cpg_network_structure = cpg_network_structure
 
         return True
 
@@ -146,15 +152,19 @@ class Optimizer(OpenaiESOptimizer):
 
         for robot, dof_map in zip(self._bodies, self._dof_maps):
             for params in population:
-                cpgs = CpgParamUtil.make_cpgs(2)
-                cpg_param_util = CpgParamUtil(cpgs, [CpgPair(cpgs[0], cpgs[1])])
-                weight_matrix = cpg_param_util.make_weight_matrix_from_params(params)
-                initial_state = cpg_param_util.make_uniform_state(math.sqrt(2) / 2.0)
-                dof_ranges = cpg_param_util.make_uniform_dof_ranges(self.DOF_RANGE)
+                weight_matrix = (
+                    self._cpg_network_structure.make_weight_matrix_from_params(params)
+                )
+                initial_state = self._cpg_network_structure.make_uniform_state(
+                    math.sqrt(2) / 2.0
+                )
+                dof_ranges = self._cpg_network_structure.make_uniform_dof_ranges(
+                    self.DOF_RANGE
+                )
 
                 inner_brain = StaticCpgBrain(
                     initial_state,
-                    cpg_param_util.num_cpgs,
+                    self._cpg_network_structure.num_cpgs,
                     weight_matrix,
                     dof_ranges,
                 )

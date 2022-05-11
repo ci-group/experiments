@@ -8,6 +8,7 @@ from revolve2.core.database import open_async_database_sqlite
 from revolve2.core.modular_robot import ActiveHinge, Body, Brick
 from revolve2.core.optimization import ProcessIdGen
 from typing import Tuple, List
+from revolve2.actor_controllers.cpg import CpgNetworkStructure, CpgPair
 
 
 def make_body() -> Tuple[Body, List[int]]:
@@ -53,6 +54,9 @@ async def main() -> None:
     robot_bodies = [body]
     dof_maps = [dof_map]
 
+    cpgs = CpgNetworkStructure.make_cpgs(2)
+    cpg_network_structure = CpgNetworkStructure(cpgs, set([CpgPair(cpgs[0], cpgs[1])]))
+
     process_id = process_id_gen.gen()
     maybe_optimizer = await Optimizer.from_database(
         database=database,
@@ -65,6 +69,7 @@ async def main() -> None:
         sampling_frequency=SAMPLING_FREQUENCY,
         control_frequency=CONTROL_FREQUENCY,
         num_generations=NUM_GENERATIONS,
+        cpg_network_structure=cpg_network_structure,
     )
     if maybe_optimizer is not None:
         logging.info(
@@ -87,6 +92,7 @@ async def main() -> None:
             sampling_frequency=SAMPLING_FREQUENCY,
             control_frequency=CONTROL_FREQUENCY,
             num_generations=NUM_GENERATIONS,
+            cpg_network_structure=cpg_network_structure,
         )
 
     logging.info("Starting optimization process..")
