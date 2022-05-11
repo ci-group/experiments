@@ -23,6 +23,7 @@ from revolve2.core.physics.running import (
 )
 from revolve2.runners.isaacgym import LocalRunner
 from dof_map_brain import DofMapBrain
+from revolve2.actor_controllers.cpg import CpgIndex, CpgParamUtil, CpgPair
 
 
 class Optimizer(OpenaiESOptimizer):
@@ -145,24 +146,17 @@ class Optimizer(OpenaiESOptimizer):
 
         for robot, dof_map in zip(self._bodies, self._dof_maps):
             for params in population:
-                # TODO make this a parameter
-                num_output_neurons = 2
-                state_size = num_output_neurons * 2
-                weight_matrix = np.array(
-                    [
-                        [0.0, params[2], params[0], 0.0],
-                        [-params[2], 0.0, 0.0, params[1]],
-                        [-params[0], 0.0, 0.0, 0.0],
-                        [0.0, -params[1], 0.0, 0.0],
-                    ]
-                )
-                initial_state = np.array([math.sqrt(2) / 2.0] * state_size)
+                cpgs = CpgParamUtil.make_cpgs(2)
+                cpg_param_util = CpgParamUtil(cpgs, [CpgPair(cpgs[0], cpgs[1])])
+                weight_matrix = cpg_param_util.make_weight_matrix_from_params(params)
+                initial_state = cpg_param_util.make_uniform_state(math.sqrt(2) / 2.0)
+                dof_ranges = cpg_param_util.make_uniform_dof_ranges(self.DOF_RANGE)
 
                 inner_brain = StaticCpgBrain(
                     initial_state,
-                    num_output_neurons,
+                    cpg_param_util.num_cpgs,
                     weight_matrix,
-                    np.array([self.DOF_RANGE] * num_output_neurons),
+                    dof_ranges,
                 )
                 brain = DofMapBrain(inner_brain, dof_map)
                 actor, controller = ModularRobot(
