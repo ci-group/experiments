@@ -31,7 +31,7 @@ from dof_map_brain import DofMapBrain
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 
 
-class Optimizer(OpenaiESOptimizer):
+class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
     _bodies: List[Body]
     _dof_maps: List[Dict[int, int]]
 
@@ -186,7 +186,7 @@ class Optimizer(OpenaiESOptimizer):
                             ]
                         ),
                         Quaternion(),
-                        controller.get_dof_targets(),
+                        [0.0 for _ in controller.get_dof_targets()],
                     )
                 )
                 batch.environments.append(env)

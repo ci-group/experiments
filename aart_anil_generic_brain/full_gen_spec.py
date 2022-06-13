@@ -2,11 +2,11 @@ import logging
 from bodies import make_bodies
 from random import Random, sample
 
-from openaies_multi_body_optimizer import OpenaiESOptimizer
+from openaies_multi_body_optimizer import OpenaiESMultiBodyOptimizer
 
 from revolve2.core.database import open_async_database_sqlite
 from revolve2.core.optimization import ProcessIdGen
-from revolve2.actor_controllers.cpg import CpgNetworkStructure, CpgPair
+from revolve2.actor_controllers.cpg import CpgNetworkStructure
 from typing import List
 from revolve2.core.modular_robot import Body
 
@@ -15,18 +15,18 @@ async def run_full_gen_spec(
     database_name: str,
     bodies: List[Body],
     dof_maps: List[List[int]],
-    cpg_network: CpgNetworkStructure,
+    cpg_network_structure: CpgNetworkStructure,
     headless: bool,
     rng_seed: int,
 ) -> None:
-    POPULATION_SIZE = 10
+    POPULATION_SIZE = 100
     SIGMA = 0.1
     LEARNING_RATE = 0.05
-    NUM_GENERATIONS = 3
+    NUM_GENERATIONS = 100
 
-    SIMULATION_TIME = 10
+    SIMULATION_TIME = 30
     SAMPLING_FREQUENCY = 5
-    CONTROL_FREQUENCY = 5
+    CONTROL_FREQUENCY = 10
 
     logging.basicConfig(
         level=logging.INFO,
@@ -45,13 +45,8 @@ async def run_full_gen_spec(
     # process id generator
     process_id_gen = ProcessIdGen()
 
-    cpgs = CpgNetworkStructure.make_cpgs(4)
-    cpg_network_structure = CpgNetworkStructure(
-        cpgs, set([CpgPair(cpgs[0], cpgs[1]), CpgPair(cpgs[2], cpgs[3])])
-    )
-
     process_id = process_id_gen.gen()
-    maybe_optimizer = await OpenaiESOptimizer.from_database(
+    maybe_optimizer = await OpenaiESMultiBodyOptimizer.from_database(
         database=database,
         process_id=process_id,
         process_id_gen=process_id_gen,
@@ -72,7 +67,7 @@ async def run_full_gen_spec(
         optimizer = maybe_optimizer
     else:
         logging.info(f"No recovery data found. Starting at generation 0.")
-        optimizer = await OpenaiESOptimizer.new(
+        optimizer = await OpenaiESMultiBodyOptimizer.new(
             database,
             process_id,
             process_id_gen,
