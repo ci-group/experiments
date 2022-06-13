@@ -4,7 +4,7 @@ import math
 from revolve2.actor_controllers.cpg import CpgNetworkStructure, CpgPair
 
 
-def make_body_1() -> Tuple[Body, List[int]]:
+def make_body_0() -> Tuple[Body, List[int]]:
     body = Body()
     body.core.left = ActiveHinge(0.0)
     body.core.left.attachment = ActiveHinge(math.pi / 2.0)
@@ -17,7 +17,7 @@ def make_body_1() -> Tuple[Body, List[int]]:
     return body, dof_map
 
 
-def make_body_2() -> Tuple[Body, List[int]]:
+def make_body_1() -> Tuple[Body, List[int]]:
     body = Body()
     body.core.left = ActiveHinge(0.0)
     body.core.left.attachment = ActiveHinge(math.pi / 2.0)
@@ -38,7 +38,7 @@ def make_body_2() -> Tuple[Body, List[int]]:
     return body, dof_map
 
 
-def make_body_3() -> Tuple[Body, List[int]]:
+def make_body_2() -> Tuple[Body, List[int]]:
     body = Body()
     body.core.left = ActiveHinge(0.0)  # id 0
     body.core.left.attachment = ActiveHinge(math.pi / 2.0)  # id 1
@@ -83,11 +83,11 @@ def make_bodies() -> Tuple[List[Body], List[List[int]]]:
     :returns: Bodies and corresponding maps from active hinge id to dof index
     """
 
-    body1, dof_map1 = make_body_1()
-    body2, dof_map2 = make_body_2()
-    body3, dof_map3 = make_body_3()
+    body1, dof_map1 = make_body_0()
+    body2, dof_map2 = make_body_1()
+    body3, dof_map3 = make_body_2()
 
-    return [body3, body2], [dof_map3, dof_map2]
+    return [body1, body2, body3], [dof_map1, dof_map2, dof_map3]
 
 
 def make_cpg_network_structure() -> CpgNetworkStructure:

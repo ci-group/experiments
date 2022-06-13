@@ -3,14 +3,14 @@ from bodies import make_bodies, make_cpg_network_structure
 
 
 async def main() -> None:
-    # run_all_full_generalist_runs() # For the actual experiments
+    # await run_all_full_generalist_runs() # For the actual experiments
     await run_full_generalist(f"dbg_full_generalist", True, 0)  # For debugging only
 
 
 async def run_all_full_generalist_runs() -> None:
     NUM_RUNS = 20
     for i in range(NUM_RUNS):
-        await run_full_generalist(f"full_generalist_run{i}", False, i)
+        await run_full_generalist(f"full_generalist_run{i}", True, i)
 
 
 async def run_full_generalist(
