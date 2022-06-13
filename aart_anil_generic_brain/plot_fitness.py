@@ -11,20 +11,29 @@ from sqlalchemy.future import select
 
 from revolve2.core.database import open_database_sqlite
 from revolve2.core.optimization.ea.openai_es import DbOpenaiESOptimizerIndividual
+from typing import List
 
 
-def plot(database: str, process_id: int) -> None:
-    # open the database
-    db = open_database_sqlite(database)
-    # read the optimizer data into a pandas dataframe
-    df = pandas.read_sql(
-        select(DbOpenaiESOptimizerIndividual).filter(
-            DbOpenaiESOptimizerIndividual.process_id == process_id
-        ),
-        db,
-    )
+def plot(databases: List[str], process_id: int) -> None:
+    dataframes = []
+
+    for database in databases:
+        # open the database
+        db = open_database_sqlite(database)
+        # read the optimizer data into a pandas dataframe
+        df = pandas.read_sql(
+            select(DbOpenaiESOptimizerIndividual).filter(
+                DbOpenaiESOptimizerIndividual.process_id == process_id
+            ),
+            db,
+        )
+        dataframes.append(df[["gen_num", "fitness"]])
+
+    # concatenate
+    dataframe = pandas.concat(dataframes)
+
     # calculate max min avg
-    describe = df[["gen_num", "fitness"]].groupby(by="gen_num").describe()["fitness"]
+    describe = dataframe.groupby(by="gen_num").describe()["fitness"]
     mean = describe[["mean"]].values.squeeze()
     std = describe[["std"]].values.squeeze()
 
@@ -37,16 +46,17 @@ def plot(database: str, process_id: int) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "database",
+        "databases",
         type=str,
-        help="The database to plot.",
+        help="The database to plot. If multiple databases are provided the average over all database will be plot, as long as databases are compatible.",
+        nargs="+",
     )
     parser.add_argument(
         "process_id", type=int, help="The id of the ea optimizer to plot."
     )
     args = parser.parse_args()
 
-    plot(args.database, args.process_id)
+    plot(args.databases, args.process_id)
 
 
 if __name__ == "__main__":
