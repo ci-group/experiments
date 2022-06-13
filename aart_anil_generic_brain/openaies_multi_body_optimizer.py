@@ -1,3 +1,8 @@
+"""
+Optimize multiple bodies at the same time using the same cpg controller mapped uising dof map controller
+Fitness unit is somewhat m/s, calculated using square(avg(sqrt(fitnesses)))
+"""
+
 import math
 from random import Random
 from typing import List, Dict
@@ -58,6 +63,7 @@ class Optimizer(OpenaiESOptimizer):
         control_frequency: float,
         num_generations: int,
         cpg_network_structure: CpgNetworkStructure,
+        headless: bool,
     ) -> None:
         nprng = np.random.Generator(
             np.random.PCG64(rng.randint(0, 2**63))
@@ -80,7 +86,7 @@ class Optimizer(OpenaiESOptimizer):
             initial_mean=initial_mean,
         )
 
-        self._init_runner()
+        self._init_runner(headless)
 
         self._bodies = robot_bodies
         self._dof_maps = dof_maps
@@ -104,6 +110,7 @@ class Optimizer(OpenaiESOptimizer):
         control_frequency: float,
         num_generations: int,
         cpg_network_structure: CpgNetworkStructure,
+        headless: bool,
     ) -> bool:
         if not await super().ainit_from_database(
             database=database,
@@ -114,7 +121,7 @@ class Optimizer(OpenaiESOptimizer):
         ):
             return False
 
-        self._init_runner()
+        self._init_runner(headless)
 
         self._bodies = robot_bodies
         self._dof_maps = dof_maps
@@ -126,8 +133,8 @@ class Optimizer(OpenaiESOptimizer):
 
         return True
 
-    def _init_runner(self) -> None:
-        self._runner = LocalRunner(LocalRunner.SimParams(), headless=False)
+    def _init_runner(self, headless: bool) -> None:
+        self._runner = LocalRunner(LocalRunner.SimParams(), headless=headless)
 
     async def _evaluate_population(
         self,
@@ -196,7 +203,7 @@ class Optimizer(OpenaiESOptimizer):
             ]
         )
         fitnesses.resize(len(self._bodies), len(population))
-        return np.sum(np.sqrt(fitnesses), axis=0)
+        return np.average(np.sqrt(fitnesses), axis=0) ** 2
 
     def _control(self, dt: float, control: ActorControl) -> None:
         for control_i, controller in enumerate(self._controllers):
