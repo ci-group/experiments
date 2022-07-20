@@ -32,6 +32,7 @@ from dataclasses import dataclass
 from typing import Optional, Dict
 from revolve2.core.modular_robot.brains import make_cpg_network_structure_neighbour
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
+import numpy as np
 
 
 @dataclass
@@ -123,7 +124,12 @@ class GraphGeneralistOptimizer(Process):
                 self._get_new_genotype(node) for node in self._graph_nodes
             ]
             fitnesses = await self._evaluate(
-                [Setting(node.environment, node.genotype) for node in self._graph_nodes]
+                [
+                    Setting(node.environment, possible_new_genotype)
+                    for node, possible_new_genotype in zip(
+                        self._graph_nodes, possible_new_genotypes
+                    )
+                ]
             )
             for node, fitness, possible_new_genotype in zip(
                 self._graph_nodes, fitnesses, possible_new_genotypes
@@ -211,4 +217,15 @@ class GraphGeneralistOptimizer(Process):
         pass
 
     def _get_new_genotype(self, node: GraphNode) -> npt.NDArray[np.float_]:  # Nx1 array
-        raise NotImplementedError()
+        choice = self._rng.randrange(0, 2)
+
+        if choice == 0:  # innovate
+            nprng = np.random.Generator(
+                np.random.PCG64(self._rng.randint(0, 2**63))
+            )  # rng is currently not numpy, but this would be very convenient. do this until that is resolved.
+            permutation = nprng.standard_normal(len(node.genotype))
+            return node.genotype + permutation
+        else:  # migrate
+            neighbours_index = self._rng.randrange(0, len(node.edges))
+            chosen_neighbour = node.edges[neighbours_index]
+            return chosen_neighbour.genotype
