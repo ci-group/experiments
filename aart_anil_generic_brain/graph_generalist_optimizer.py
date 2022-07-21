@@ -30,9 +30,16 @@ from dof_map_brain import DofMapBrain
 from revolve2.core.optimization import Process
 from dataclasses import dataclass
 from typing import Optional, Dict
-from revolve2.core.modular_robot.brains import make_cpg_network_structure_neighbour
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 import numpy as np
+import sqlalchemy
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.future import select
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from revolve2.core.database.serializers import DbNdarray1xn, Ndarray1xnSerializer
 
 
 @dataclass
@@ -71,6 +78,10 @@ class GraphGeneralistOptimizer(Process):
 
     _cpg_network_structure: CpgNetworkStructure
 
+    _database: AsyncEngine
+
+    _process_id: int
+
     async def ainit_new(
         self,
         database: AsyncEngine,
@@ -94,8 +105,13 @@ class GraphGeneralistOptimizer(Process):
         self._simulation_time = simulation_time
         self._sampling_frequency = sampling_frequency
         self._control_frequency = control_frequency
+        self._database = database
+        self._process_id = process_id
 
         self._init_runner(headless)
+
+        await (await session.connection()).run_sync(DbBase.metadata.create_all)
+        await Ndarray1xnSerializer.create_tables(session)
 
     async def ainit_from_database(
         self,
@@ -214,7 +230,24 @@ class GraphGeneralistOptimizer(Process):
         )
 
     async def _save_generation(self) -> None:
-        pass
+        async with AsyncSession(self._database) as session:
+            async with session.begin():
+                genotype_ids = await Ndarray1xnSerializer.to_database(
+                    session, [node.genotype for node in self._graph_nodes]
+                )
+                dbnodes = [
+                    DbGraphGeneralistOptimizerGraphNodeState(
+                        process_id=self._process_id,
+                        gen_num=self._generation_index,
+                        graph_index=i,
+                        genotype=genotype_id,
+                        fitness=node.fitness,
+                    )
+                    for i, (node, genotype_id) in enumerate(
+                        zip(self._graph_nodes, genotype_ids)
+                    )
+                ]
+                session.add_all(dbnodes)
 
     def _get_new_genotype(self, node: GraphNode) -> npt.NDArray[np.float_]:  # Nx1 array
         choice = self._rng.randrange(0, 2)
@@ -229,3 +262,20 @@ class GraphGeneralistOptimizer(Process):
             neighbours_index = self._rng.randrange(0, len(node.edges))
             chosen_neighbour = node.edges[neighbours_index]
             return chosen_neighbour.genotype
+
+
+DbBase = declarative_base()
+
+
+class DbGraphGeneralistOptimizerGraphNodeState(DbBase):
+    __tablename__ = "graph_generalist_optimizer_population"
+
+    process_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, primary_key=True)
+    gen_num = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, primary_key=True)
+    graph_index = sqlalchemy.Column(
+        sqlalchemy.Integer, nullable=False, primary_key=True
+    )
+    genotype = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey(DbNdarray1xn.id), nullable=False
+    )
+    fitness = sqlalchemy.Column(sqlalchemy.Float, nullable=True)

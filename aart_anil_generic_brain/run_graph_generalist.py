@@ -28,7 +28,12 @@ def make_graph_nodes(
     nprng = np.random.Generator(
         np.random.PCG64(rng.randint(0, 2**63))
     )  # rng is currently not numpy, but this would be very convenient. do this until that is resolved.
-    initial_mean = nprng.uniform(
+    genotype1 = nprng.uniform(
+        size=cpg_network_structure.num_params,
+        low=0,
+        high=1.0,
+    )
+    genotype2 = nprng.uniform(
         size=cpg_network_structure.num_params,
         low=0,
         high=1.0,
@@ -40,8 +45,8 @@ def make_graph_nodes(
     env2 = Environment(body2, dof_map2)
     edges1 = []
     edges2 = []
-    node1 = GraphNode(env1, initial_mean, edges1, None)
-    node2 = GraphNode(env2, initial_mean, edges2, None)
+    node1 = GraphNode(env1, genotype1, edges1, None)
+    node2 = GraphNode(env2, genotype2, edges2, None)
     edges1.append(node2)
     edges2.append(node1)
 
