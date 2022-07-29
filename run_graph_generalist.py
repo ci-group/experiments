@@ -3,7 +3,12 @@ from bodies import make_bodies, make_cpg_network_structure
 import logging
 from random import Random
 from revolve2.core.database import open_async_database_sqlite
-from graph_generalist_optimizer import GraphGeneralistOptimizer, GraphNode, Environment
+from graph_generalist_optimizer import (
+    GraphGeneralistOptimizer,
+    GraphNode,
+    Environment,
+    Genotype,
+)
 from revolve2.core.optimization import ProcessIdGen
 from typing import List
 from bodies import make_body_1, make_body_2, make_cpg_network_structure
@@ -45,8 +50,8 @@ def make_graph_nodes(
     env2 = Environment(body2, dof_map2)
     edges1 = []
     edges2 = []
-    node1 = GraphNode(env1, genotype1, edges1, None)
-    node2 = GraphNode(env2, genotype2, edges2, None)
+    node1 = GraphNode(env1, Genotype(genotype1, None), edges1, None)
+    node2 = GraphNode(env2, Genotype(genotype2, None), edges2, None)
     edges1.append(node2)
     edges2.append(node1)
 
