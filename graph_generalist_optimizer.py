@@ -167,8 +167,10 @@ class GraphGeneralistOptimizer(Process):
         self._controllers = []
 
         for node in self._graph_nodes:
-            weight_matrix = self._cpg_network_structure.make_weight_matrix_from_params(
-                node.genotype
+            weight_matrix = (
+                self._cpg_network_structure.make_connection_weights_matrix_from_params(
+                    node.genotype
+                )
             )
             initial_state = self._cpg_network_structure.make_uniform_state(
                 math.sqrt(2) / 2.0

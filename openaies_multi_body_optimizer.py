@@ -69,7 +69,7 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
             np.random.PCG64(rng.randint(0, 2**63))
         )  # rng is currently not numpy, but this would be very convenient. do this until that is resolved.
         initial_mean = nprng.uniform(
-            size=cpg_network_structure.num_params,
+            size=cpg_network_structure.num_connections,
             low=0,
             high=1.0,
         )
@@ -154,8 +154,8 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
 
         for robot, dof_map in zip(self._bodies, self._dof_maps):
             for params in population:
-                weight_matrix = (
-                    self._cpg_network_structure.make_weight_matrix_from_params(params)
+                weight_matrix = self._cpg_network_structure.make_connection_weights_matrix_from_params(
+                    params
                 )
                 initial_state = self._cpg_network_structure.make_uniform_state(
                     math.sqrt(2) / 2.0
@@ -209,10 +209,12 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         fitnesses.resize(len(self._bodies), len(population))
         return np.average(np.sqrt(fitnesses), axis=0) ** 2
 
-    def _control(self, dt: float, control: ActorControl) -> None:
-        for control_i, controller in enumerate(self._controllers):
-            controller.step(dt)
-            control.set_dof_targets(control_i, 0, controller.get_dof_targets())
+    def _control(
+        self, environment_index: int, dt: float, control: ActorControl
+    ) -> None:
+        controller = self._controllers[environment_index]
+        controller.step(dt)
+        control.set_dof_targets(0, controller.get_dof_targets())
 
     @staticmethod
     def _calculate_fitness(begin_state: ActorState, end_state: ActorState) -> float:

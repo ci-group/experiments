@@ -48,7 +48,9 @@ async def rerun_best(
 
         robots = []
         for body, dof_map in zip(bodies, dof_maps):
-            weight_matrix = cpg_network_structure.make_weight_matrix_from_params(params)
+            weight_matrix = (
+                cpg_network_structure.make_connection_weights_matrix_from_params(params)
+            )
             initial_state = cpg_network_structure.make_uniform_state(math.sqrt(2) / 2.0)
             dof_ranges = cpg_network_structure.make_uniform_dof_ranges(1.0)
 

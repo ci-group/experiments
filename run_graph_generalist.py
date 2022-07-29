@@ -29,12 +29,12 @@ def make_graph_nodes(
         np.random.PCG64(rng.randint(0, 2**63))
     )  # rng is currently not numpy, but this would be very convenient. do this until that is resolved.
     genotype1 = nprng.uniform(
-        size=cpg_network_structure.num_params,
+        size=cpg_network_structure.num_connections,
         low=0,
         high=1.0,
     )
     genotype2 = nprng.uniform(
-        size=cpg_network_structure.num_params,
+        size=cpg_network_structure.num_connections,
         low=0,
         high=1.0,
     )
