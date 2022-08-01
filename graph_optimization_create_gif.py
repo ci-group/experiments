@@ -25,8 +25,8 @@ df = pandas.read_sql(
     ),
     db,
 )
-min_fitness = df.fitness.min()
-max_fitness = df.fitness.max()
+min_id = df.genotype_id.min()
+max_id = df.genotype_id.max()
 
 figsdir = f"./{dbname}_figs"
 os.makedirs(figsdir)
@@ -34,10 +34,11 @@ os.makedirs(figsdir)
 for gen_i in range(len(df.gen_num.value_counts())):
     gen = df[df.gen_num == gen_i]
 
-    harvest = np.array([gen.fitness])
+    ids = np.array([gen.genotype_id])
+    fitnesses = np.array([gen.fitness])
 
     fig, ax = plt.subplots()
-    im = ax.imshow(harvest, vmin=min_fitness, vmax=max_fitness)
+    im = ax.imshow(ids, vmin=min_id, vmax=max_id)
 
     ax.set_xticks(np.arange(len(bodies)), labels=bodies)
     ax.set_yticks(np.arange(len(envs)), labels=envs)
@@ -47,11 +48,10 @@ for gen_i in range(len(df.gen_num.value_counts())):
 
     for i in range(len(envs)):
         for j in range(len(bodies)):
-            text = ax.text(j, i, harvest[i, j], ha="center", va="center", color="w")
+            text = ax.text(j, i, fitnesses[i, j], ha="center", va="center", color="w")
 
     ax.set_title(f"Graph optimizer generation {gen_i}")
     fig.tight_layout()
-    # plt.show()
     plt.savefig(os.path.join(figsdir, f"gen_{gen_i}.png"))
 
 frames = [

@@ -261,14 +261,14 @@ class GraphGeneralistOptimizer(Process):
                     dbgenotypes
                 )  # just to be sure because of check above
                 for new_gen, new_id in zip(new_genotypes, new_genotype_ids):
-                    new_gen.id = new_id
+                    new_gen.db_id = int(new_id)
 
                 dbnodes = [
                     DbGraphGeneralistOptimizerGraphNodeState(
                         process_id=self._process_id,
                         gen_num=self._generation_index,
                         graph_index=i,
-                        genotype_id=node.genotype.id,
+                        genotype_id=node.genotype.db_id,
                         fitness=node.fitness,
                     )
                     for i, node in enumerate(self._graph_nodes)
