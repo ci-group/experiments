@@ -26,7 +26,7 @@ async def run_full_gen_spec(
 
     SIMULATION_TIME = 30
     SAMPLING_FREQUENCY = 5
-    CONTROL_FREQUENCY = 10
+    CONTROL_FREQUENCY = 60
 
     logging.basicConfig(
         level=logging.INFO,
