@@ -170,10 +170,10 @@ class GraphGeneralistOptimizer(Process):
 
         self._controllers = []
 
-        for node in self._graph_nodes:
+        for setting in settings:
             weight_matrix = (
                 self._cpg_network_structure.make_connection_weights_matrix_from_params(
-                    node.genotype.genotype
+                    setting.genotype.genotype
                 )
             )
             initial_state = self._cpg_network_structure.make_uniform_state(
@@ -187,8 +187,8 @@ class GraphGeneralistOptimizer(Process):
                 weight_matrix,
                 dof_ranges,
             )
-            brain = DofMapBrain(inner_brain, node.environment.dof_map)
-            robot = ModularRobot(node.environment.body, brain)
+            brain = DofMapBrain(inner_brain, setting.environment.dof_map)
+            robot = ModularRobot(setting.environment.body, brain)
             actor, controller = robot.make_actor_and_controller()
             bounding_box = actor.calc_aabb()
             self._controllers.append(controller)
