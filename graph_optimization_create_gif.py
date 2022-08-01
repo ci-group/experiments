@@ -48,7 +48,7 @@ for gen_i in range(len(df.gen_num.value_counts())):
 
     for i in range(len(envs)):
         for j in range(len(bodies)):
-            text = ax.text(j, i, fitnesses[i, j], ha="center", va="center", color="w")
+            text = ax.text(j, i, ids[i, j], ha="center", va="center", color="w")
 
     ax.set_title(f"Graph optimizer generation {gen_i}")
     fig.tight_layout()
