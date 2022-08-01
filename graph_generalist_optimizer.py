@@ -268,7 +268,7 @@ class GraphGeneralistOptimizer(Process):
                         process_id=self._process_id,
                         gen_num=self._generation_index,
                         graph_index=i,
-                        genotype=node.genotype.id,
+                        genotype_id=node.genotype.id,
                         fitness=node.fitness,
                     )
                     for i, node in enumerate(self._graph_nodes)
