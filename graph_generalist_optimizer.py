@@ -26,7 +26,7 @@ from revolve2.core.physics.running import (
     Runner,
     Environment as PhysicsEnv,
 )
-from revolve2.runners.mujoco import LocalRunner
+from revolve2.runners.isaacgym import LocalRunner
 from dof_map_brain import DofMapBrain
 from revolve2.core.optimization import Process
 from dataclasses import dataclass
@@ -127,7 +127,7 @@ class GraphGeneralistOptimizer(Process):
         return False
 
     def _init_runner(self, headless: bool) -> None:
-        self._runner = LocalRunner(headless=headless)
+        self._runner = LocalRunner(LocalRunner.SimParams(), headless=headless)
 
     async def run(self) -> None:
         if self._generation_index == 0:

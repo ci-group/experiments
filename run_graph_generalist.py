@@ -11,7 +11,7 @@ from graph_generalist_optimizer import (
 )
 from revolve2.core.optimization import ProcessIdGen
 from typing import List
-from bodies import make_body_1, make_body_2, make_cpg_network_structure
+from bodies import make_body_1, make_body_2, make_body_3, make_body_4, make_body_5, make_cpg_network_structure
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 import numpy as np
 
@@ -44,17 +44,17 @@ def make_graph_nodes(
         high=1.0,
     )
     genotype3 = nprng.uniform(
-        size=cpg_network_structure.num_params,
+        size=cpg_network_structure.num_connections,
         low=0,
         high=1.0,
     )
     genotype4 = nprng.uniform(
-        size=cpg_network_structure.num_params,
+        size=cpg_network_structure.num_connections,
         low=0,
         high=1.0,
     )
     genotype5 = nprng.uniform(
-        size=cpg_network_structure.num_params,
+        size=cpg_network_structure.num_connections,
         low=0,
         high=1.0,
     )
@@ -74,11 +74,11 @@ def make_graph_nodes(
     edges3 = []
     edges4 = []
     edges5 = []
-    node1 = GraphNode(env1, genotype1, edges1, None)
-    node2 = GraphNode(env2, genotype2, edges2, None)
-    node3 = GraphNode(env3, genotype3, edges3, None)
-    node4 = GraphNode(env4, genotype4, edges4, None)
-    node5 = GraphNode(env5, genotype5, edges5, None)
+    node1 = GraphNode(env1, Genotype(genotype1, None), edges1, None)
+    node2 = GraphNode(env2, Genotype(genotype2, None), edges2, None)
+    node3 = GraphNode(env3, Genotype(genotype3, None), edges3, None)
+    node4 = GraphNode(env4, Genotype(genotype4, None), edges4, None)
+    node5 = GraphNode(env5, Genotype(genotype5, None), edges5, None)
 
     edges1.append(node2)
     edges1.append(node3)
@@ -94,7 +94,7 @@ def make_graph_nodes(
     edges5.append(node3)
 
 
-    return [node1, node2, node3, node4, node5]
+    return [node1, node2, node3]#, node2, node3, node4, node5]
 
 
 async def run_graph_generalist(

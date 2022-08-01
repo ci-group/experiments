@@ -25,7 +25,7 @@ class DofMapBrain(Brain, ABC):
         )  # most inner brains will ignore these parameters but pass them anyway
         assert len(self._dof_map) == len(dof_ids)
         assert all(dof_id in self._dof_map.keys() for dof_id in dof_ids)
-        assert all(index < len(dof_ids) for index in self._dof_map.values())
+        # TODO assert that the provided self._dof_map.values() are valid dof indices provided by the brain
 
         output_map = [self._dof_map[mod_id] for mod_id in dof_ids]
 
