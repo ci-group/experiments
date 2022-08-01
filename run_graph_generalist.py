@@ -18,7 +18,7 @@ import numpy as np
 
 async def main() -> None:
     # await run_all_graph_generalist_runs() # For the actual experiments
-    await run_graph_generalist(f"dbg_graph_generalist", True, 0)  # For debugging only
+    await run_graph_generalist(f"dbg_graph_generalist", False, 0)  # For debugging only
 
 
 async def run_all_graph_generalist_runs() -> None:
@@ -43,19 +43,53 @@ def make_graph_nodes(
         low=0,
         high=1.0,
     )
+    genotype3 = nprng.uniform(
+        size=cpg_network_structure.num_params,
+        low=0,
+        high=1.0,
+    )
+    genotype4 = nprng.uniform(
+        size=cpg_network_structure.num_params,
+        low=0,
+        high=1.0,
+    )
+    genotype5 = nprng.uniform(
+        size=cpg_network_structure.num_params,
+        low=0,
+        high=1.0,
+    )
 
     body1, dof_map1 = make_body_1()
     body2, dof_map2 = make_body_2()
+    body3, dof_map3 = make_body_3()
+    body4, dof_map4 = make_body_4()
+    body5, dof_map5 = make_body_5()
     env1 = Environment(body1, dof_map1)
     env2 = Environment(body2, dof_map2)
+    env3 = Environment(body3, dof_map3)
+    env4 = Environment(body4, dof_map4)
+    env5 = Environment(body5, dof_map5)
     edges1 = []
     edges2 = []
-    node1 = GraphNode(env1, Genotype(genotype1, None), edges1, None)
-    node2 = GraphNode(env2, Genotype(genotype2, None), edges2, None)
+    edges3 = []
+    edges4 = []
+    edges5 = []
+    node1 = GraphNode(env1, genotype1, edges1, None)
+    node2 = GraphNode(env2, genotype2, edges2, None)
+    node3 = GraphNode(env3, genotype3, edges3, None)
+    node4 = GraphNode(env4, genotype4, edges4, None)
+    node5 = GraphNode(env5, genotype5, edges5, None)
     edges1.append(node2)
+    edges1.append(node3)
+    
     edges2.append(node1)
+    edges2.append(node4)
+    
+    
+    edges2.append(node1)
+    edges2.append(node4)
 
-    return [node1, node2]
+    return [node1, node2, node3, node4, node5]
 
 
 async def run_graph_generalist(

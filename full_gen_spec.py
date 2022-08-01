@@ -20,9 +20,9 @@ async def run_full_gen_spec(
     rng_seed: int,
 ) -> None:
     POPULATION_SIZE = 100
-    SIGMA = 0.1
+    SIGMA = 0.5
     LEARNING_RATE = 0.05
-    NUM_GENERATIONS = 100
+    NUM_GENERATIONS = 500
 
     SIMULATION_TIME = 30
     SAMPLING_FREQUENCY = 5
