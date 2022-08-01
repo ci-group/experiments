@@ -79,15 +79,20 @@ def make_graph_nodes(
     node3 = GraphNode(env3, genotype3, edges3, None)
     node4 = GraphNode(env4, genotype4, edges4, None)
     node5 = GraphNode(env5, genotype5, edges5, None)
+
     edges1.append(node2)
     edges1.append(node3)
-    
+
     edges2.append(node1)
     edges2.append(node4)
-    
-    
-    edges2.append(node1)
-    edges2.append(node4)
+
+    edges3.append(node1)
+    edges3.append(node5)
+
+
+    edges4.append(node2)
+    edges5.append(node3)
+
 
     return [node1, node2, node3, node4, node5]
 
