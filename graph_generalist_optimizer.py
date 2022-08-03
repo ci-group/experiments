@@ -67,7 +67,7 @@ class Setting:
 
 
 class GraphGeneralistOptimizer(Process):
-    _num_generations: int
+    _num_evaluations: int
     _graph_nodes: List[GraphNode]
     _generation_index: int
 
@@ -86,6 +86,8 @@ class GraphGeneralistOptimizer(Process):
 
     _process_id: int
 
+    _evaluation_count: int
+
     async def ainit_new(
         self,
         database: AsyncEngine,
@@ -93,7 +95,7 @@ class GraphGeneralistOptimizer(Process):
         process_id: int,
         process_id_gen: ProcessIdGen,
         rng: Random,
-        num_generations: int,
+        num_evaluations: int,
         graph_nodes: List[GraphNode],
         cpg_network_structure: CpgNetworkStructure,
         simulation_time: int,
@@ -102,7 +104,7 @@ class GraphGeneralistOptimizer(Process):
         headless: bool,
     ) -> None:
         self._rng = rng
-        self._num_generations = num_generations
+        self._num_evaluations = num_evaluations
         self._graph_nodes = graph_nodes
         self._generation_index = 0
         self._cpg_network_structure = cpg_network_structure
@@ -111,6 +113,8 @@ class GraphGeneralistOptimizer(Process):
         self._control_frequency = control_frequency
         self._database = database
         self._process_id = process_id
+
+        self._evaluation_count = 0
 
         self._init_runner(headless)
 
@@ -127,19 +131,20 @@ class GraphGeneralistOptimizer(Process):
         return False
 
     def _init_runner(self, headless: bool) -> None:
-        self._runner = LocalRunner(LocalRunner.SimParams(), headless=headless)
+        self._runner = LocalRunner(headless=headless)
 
     async def run(self) -> None:
         if self._generation_index == 0:
             fitnesses = await self._evaluate(
                 [Setting(node.environment, node.genotype) for node in self._graph_nodes]
             )
+            self._evaluation_count += len(self._graph_nodes)
             for node, fitness in zip(self._graph_nodes, fitnesses):
                 node.fitness = fitness
             await self._save_generation()
             self._generation_index += 1
 
-        while self._generation_index < self._num_generations:
+        while self._evaluation_count < self._num_evaluations:
             possible_new_genotypes = [
                 self._get_new_genotype(node) for node in self._graph_nodes
             ]
@@ -151,6 +156,7 @@ class GraphGeneralistOptimizer(Process):
                     )
                 ]
             )
+            self._evaluation_count += len(possible_new_genotypes)
             for node, fitness, possible_new_genotype in zip(
                 self._graph_nodes, fitnesses, possible_new_genotypes
             ):

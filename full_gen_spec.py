@@ -18,11 +18,11 @@ async def run_full_gen_spec(
     cpg_network_structure: CpgNetworkStructure,
     headless: bool,
     rng_seed: int,
+    num_evaluations: int,
 ) -> None:
     POPULATION_SIZE = 100
     SIGMA = 0.5
     LEARNING_RATE = 0.05
-    NUM_GENERATIONS = 500
 
     SIMULATION_TIME = 30
     SAMPLING_FREQUENCY = 5
@@ -56,7 +56,7 @@ async def run_full_gen_spec(
         simulation_time=SIMULATION_TIME,
         sampling_frequency=SAMPLING_FREQUENCY,
         control_frequency=CONTROL_FREQUENCY,
-        num_generations=NUM_GENERATIONS,
+        num_evaluations=num_evaluations,
         cpg_network_structure=cpg_network_structure,
         headless=headless,
     )
@@ -80,7 +80,7 @@ async def run_full_gen_spec(
             simulation_time=SIMULATION_TIME,
             sampling_frequency=SAMPLING_FREQUENCY,
             control_frequency=CONTROL_FREQUENCY,
-            num_generations=NUM_GENERATIONS,
+            num_evaluations=num_evaluations,
             cpg_network_structure=cpg_network_structure,
             headless=headless,
         )

@@ -38,6 +38,7 @@ async def run_all_full_specialist_runs() -> None:
 async def run_full_specialist(
     database_name: str, headless: bool, rng_seed: int, body: Body, dof_map: List[int]
 ) -> None:
+    num_evaluations = 50000 / len(make_bodies())
     cpg_network_structure = make_cpg_network_structure()
 
     await run_full_gen_spec(
@@ -47,6 +48,7 @@ async def run_full_specialist(
         cpg_network_structure=cpg_network_structure,
         headless=headless,
         rng_seed=rng_seed,
+        num_evaluations=num_evaluations,
     )
 
 

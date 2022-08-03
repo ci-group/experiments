@@ -23,8 +23,8 @@ import numpy as np
 
 
 async def main() -> None:
-    await run_all_graph_generalist_runs()  # For the actual experiments
-    # await run_graph_generalist(f"dbg_graph_generalist", False, 0)  # For debugging only
+    # await run_all_graph_generalist_runs()  # For the actual experiments
+    await run_graph_generalist(f"dbg_graph_generalist", False, 0)  # For debugging only
 
 
 async def run_all_graph_generalist_runs() -> None:
@@ -107,7 +107,7 @@ async def run_graph_generalist(
     headless: bool,
     rng_seed: int,
 ) -> None:
-    NUM_GENERATIONS = 100
+    NUM_EVALUATIONS = 100
 
     SIMULATION_TIME = 30
     SAMPLING_FREQUENCY = 5
@@ -152,7 +152,7 @@ async def run_graph_generalist(
             process_id=process_id,
             process_id_gen=process_id_gen,
             rng=rng,
-            num_generations=NUM_GENERATIONS,
+            num_evaluations=NUM_EVALUATIONS,
             graph_nodes=graph_nodes,
             simulation_time=SIMULATION_TIME,
             sampling_frequency=SAMPLING_FREQUENCY,

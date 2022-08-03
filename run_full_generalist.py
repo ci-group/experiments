@@ -16,11 +16,19 @@ async def run_all_full_generalist_runs() -> None:
 async def run_full_generalist(
     database_name: str, headless: bool, rng_seed: int
 ) -> None:
+    NUM_EVALUATIONS = 50000
+
     bodies, dof_maps = make_bodies()
     cpg_network_structure = make_cpg_network_structure()
 
     await run_full_gen_spec(
-        database_name, bodies, dof_maps, cpg_network_structure, headless, rng_seed
+        database_name,
+        bodies,
+        dof_maps,
+        cpg_network_structure,
+        headless,
+        rng_seed,
+        NUM_EVALUATIONS,
     )
 
 

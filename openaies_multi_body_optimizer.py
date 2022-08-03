@@ -26,7 +26,7 @@ from revolve2.core.physics.running import (
     PosedActor,
     Runner,
 )
-from revolve2.runners.isaacgym import LocalRunner
+from revolve2.runners.mujoco import LocalRunner
 from dof_map_brain import DofMapBrain
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 
@@ -42,7 +42,7 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
     _sampling_frequency: float
     _control_frequency: float
 
-    _num_generations: int
+    _num_evaluations: int
 
     _cpg_network_structure: CpgNetworkStructure
 
@@ -61,7 +61,7 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         simulation_time: int,
         sampling_frequency: float,
         control_frequency: float,
-        num_generations: int,
+        num_evaluations: int,
         cpg_network_structure: CpgNetworkStructure,
         headless: bool,
     ) -> None:
@@ -93,7 +93,7 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         self._simulation_time = simulation_time
         self._sampling_frequency = sampling_frequency
         self._control_frequency = control_frequency
-        self._num_generations = num_generations
+        self._num_evaluations = num_evaluations
         self._cpg_network_structure = cpg_network_structure
 
     async def ainit_from_database(  # type: ignore # see comment at ainit_new
@@ -108,7 +108,7 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         simulation_time: int,
         sampling_frequency: float,
         control_frequency: float,
-        num_generations: int,
+        num_evaluations: int,
         cpg_network_structure: CpgNetworkStructure,
         headless: bool,
     ) -> bool:
@@ -128,13 +128,13 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         self._simulation_time = simulation_time
         self._sampling_frequency = sampling_frequency
         self._control_frequency = control_frequency
-        self._num_generations = num_generations
+        self._num_evaluations = num_evaluations
         self._cpg_network_structure = cpg_network_structure
 
         return True
 
     def _init_runner(self, headless: bool) -> None:
-        self._runner = LocalRunner(LocalRunner.SimParams(), headless=headless)
+        self._runner = LocalRunner(headless=headless)
 
     async def _evaluate_population(
         self,
@@ -225,4 +225,7 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         )
 
     def _must_do_next_gen(self) -> bool:
-        return self.generation_number != self._num_generations
+        return (
+            self._population_size * len(self._bodies) * self.generation_number
+            < self._num_evaluations
+        )
