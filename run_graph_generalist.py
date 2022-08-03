@@ -23,8 +23,8 @@ import numpy as np
 
 
 async def main() -> None:
-    # await run_all_graph_generalist_runs()  # For the actual experiments
-    await run_graph_generalist(f"dbg_graph_generalist", False, 0)  # For debugging only
+    await run_all_graph_generalist_runs()  # For the actual experiments
+    # await run_graph_generalist(f"dbg_graph_generalist", False, 0)  # For debugging only
 
 
 async def run_all_graph_generalist_runs() -> None:

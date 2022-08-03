@@ -5,8 +5,8 @@ from typing import List
 
 
 async def main() -> None:
-    # await run_all_full_specialist_runs() # For the actual experiments
-    await dbg_run_full_specialist()  # For debugging only
+    await run_all_full_specialist_runs()  # For the actual experiments
+    # await dbg_run_full_specialist()  # For debugging only
 
 
 async def dbg_run_full_specialist() -> None:
