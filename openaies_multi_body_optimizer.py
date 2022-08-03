@@ -26,7 +26,7 @@ from revolve2.core.physics.running import (
     PosedActor,
     Runner,
 )
-from revolve2.runners.mujoco import LocalRunner
+from revolve2.runners.isaacgym import LocalRunner
 from dof_map_brain import DofMapBrain
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 
