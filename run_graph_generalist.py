@@ -1,5 +1,4 @@
-from full_gen_spec import run_full_gen_spec
-from bodies import make_bodies, make_cpg_network_structure
+from bodies import make_cpg_network_structure
 import logging
 from random import Random
 from revolve2.core.database import open_async_database_sqlite
@@ -11,20 +10,27 @@ from graph_generalist_optimizer import (
 )
 from revolve2.core.optimization import ProcessIdGen
 from typing import List
-from bodies import make_body_1, make_body_2, make_body_3, make_body_4, make_body_5, make_cpg_network_structure
+from bodies import (
+    make_body_1,
+    make_body_2,
+    make_body_3,
+    make_body_4,
+    make_body_5,
+    make_cpg_network_structure,
+)
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 import numpy as np
 
 
 async def main() -> None:
-    # await run_all_graph_generalist_runs() # For the actual experiments
-    await run_graph_generalist(f"dbg_graph_generalist", False, 0)  # For debugging only
+    await run_all_graph_generalist_runs()  # For the actual experiments
+    # await run_graph_generalist(f"dbg_graph_generalist", False, 0)  # For debugging only
 
 
 async def run_all_graph_generalist_runs() -> None:
     NUM_RUNS = 20
     for i in range(NUM_RUNS):
-        await run_graph_generalist(f"full_generalist_run{i}", True, i)
+        await run_graph_generalist(f"graph_generalist_run{i}", True, i)
 
 
 def make_graph_nodes(
@@ -81,20 +87,19 @@ def make_graph_nodes(
     node5 = GraphNode(env5, Genotype(genotype5, None), edges5, None)
 
     edges1.append(node2)
-    edges1.append(node3)
 
     edges2.append(node1)
-    edges2.append(node4)
+    edges2.append(node3)
 
-    edges3.append(node1)
-    edges3.append(node5)
+    edges3.append(node2)
+    edges3.append(node4)
 
+    edges4.append(node3)
+    edges4.append(node5)
 
-    edges4.append(node2)
-    edges5.append(node3)
+    edges5.append(node4)
 
-
-    return [node1, node2, node3]#, node2, node3, node4, node5]
+    return [node1, node2, node3, node4, node5]
 
 
 async def run_graph_generalist(

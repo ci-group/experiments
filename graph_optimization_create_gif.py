@@ -10,11 +10,12 @@ import pandas
 from sqlalchemy.future import select
 import os
 import PIL
+import random
 
-bodies = ["body1", "body2"]
+bodies = ["body1", "body2", "body3", "body4", "body5"]
 envs = ["flat plane"]
 
-dbname = "dbg_graph_generalist"
+dbname = "graph_generalist_run0"
 db = open_database_sqlite(dbname)
 process_id = 0
 
@@ -28,6 +29,11 @@ df = pandas.read_sql(
 min_id = df.genotype_id.min()
 max_id = df.genotype_id.max()
 
+colormap = {id + min_id: id for id in range(max_id - min_id + 1)}
+shuffledvalues = list(colormap.values())
+random.shuffle(shuffledvalues)
+colormap = dict(zip(colormap, shuffledvalues))
+
 figsdir = f"./{dbname}_figs"
 os.makedirs(figsdir)
 
@@ -35,10 +41,14 @@ for gen_i in range(len(df.gen_num.value_counts())):
     gen = df[df.gen_num == gen_i]
 
     ids = np.array([gen.genotype_id])
-    fitnesses = np.array([gen.fitness])
+    reassigned_colors = ids.copy()
+
+    for i in range(len(ids)):
+        for j in range(len(ids[i])):
+            reassigned_colors[i][j] = colormap[ids[i][j]]
 
     fig, ax = plt.subplots()
-    im = ax.imshow(ids, vmin=min_id, vmax=max_id)
+    im = ax.imshow(reassigned_colors, vmin=min_id, vmax=max_id)
 
     ax.set_xticks(np.arange(len(bodies)), labels=bodies)
     ax.set_yticks(np.arange(len(envs)), labels=envs)

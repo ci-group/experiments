@@ -4,7 +4,7 @@ import math
 from revolve2.actor_controllers.cpg import CpgNetworkStructure, CpgPair
 
 
-def make_body_1() -> Tuple[Body, List[int]]:
+def make_body_3() -> Tuple[Body, List[int]]:
     # supergecko
     body = Body()
     body.core.left = ActiveHinge(math.pi / 2.0)  # id 0
@@ -45,11 +45,6 @@ def make_body_1() -> Tuple[Body, List[int]]:
     return body, dof_map
 
 
-
-
-
-
-
 def make_body_2() -> Tuple[Body, List[int]]:
     # supergecko front left missing
     body = Body()
@@ -86,10 +81,7 @@ def make_body_2() -> Tuple[Body, List[int]]:
     return body, dof_map
 
 
-
-
-
-def make_body_3() -> Tuple[Body, List[int]]:
+def make_body_4() -> Tuple[Body, List[int]]:
     # supergecko back right missing
     body = Body()
     body.core.left = ActiveHinge(math.pi / 2.0)  # id 0
@@ -108,7 +100,6 @@ def make_body_3() -> Tuple[Body, List[int]]:
     body.core.back.attachment.attachment.left.attachment = ActiveHinge(math.pi / 2.0)
     body.core.back.attachment.attachment.left.attachment.attachment = Brick(0.0)
 
-
     body.finalize()
 
     dof_map = {
@@ -125,13 +116,9 @@ def make_body_3() -> Tuple[Body, List[int]]:
     return body, dof_map
 
 
-
-
-
-def make_body_4() -> Tuple[Body, List[int]]:
+def make_body_1() -> Tuple[Body, List[int]]:
     # supergecko front both missing
     body = Body()
-    
 
     body.core.back = ActiveHinge(0.0)
     body.core.back.attachment = ActiveHinge(math.pi / 2.0)
@@ -148,7 +135,6 @@ def make_body_4() -> Tuple[Body, List[int]]:
     body.finalize()
 
     dof_map = {
-    
         body.core.back.id: 4,
         body.core.back.attachment.id: 5,
         body.core.back.attachment.attachment.left.id: 6,
@@ -158,10 +144,6 @@ def make_body_4() -> Tuple[Body, List[int]]:
     }
 
     return body, dof_map
-
-
-
-
 
 
 def make_body_5() -> Tuple[Body, List[int]]:
@@ -186,8 +168,6 @@ def make_body_5() -> Tuple[Body, List[int]]:
     return body, dof_map
 
 
-
-
 def make_bodies() -> Tuple[List[Body], List[List[int]]]:
     """
     :returns: Bodies and corresponding maps from active hinge id to dof index
@@ -199,7 +179,13 @@ def make_bodies() -> Tuple[List[Body], List[List[int]]]:
     body4, dof_map4 = make_body_4()
     body5, dof_map5 = make_body_5()
 
-    return [body1, body2, body3, body4, body5], [dof_map1, dof_map2, dof_map3, dof_map4, dof_map5]
+    return [body1, body2, body3, body4, body5], [
+        dof_map1,
+        dof_map2,
+        dof_map3,
+        dof_map4,
+        dof_map5,
+    ]
 
 
 def make_cpg_network_structure() -> CpgNetworkStructure:
