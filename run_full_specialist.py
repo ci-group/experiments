@@ -22,7 +22,7 @@ async def dbg_run_full_specialist() -> None:
 
 
 async def run_all_full_specialist_runs() -> None:
-    NUM_RUNS = 20
+    NUM_RUNS = 50
     bodies, dof_maps = make_bodies()
     for i_body, body, dof_map in enumerate(zip(bodies, dof_maps)):
         for i_run in range(NUM_RUNS):
