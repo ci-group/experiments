@@ -24,7 +24,7 @@ async def dbg_run_full_specialist() -> None:
 async def run_all_full_specialist_runs() -> None:
     NUM_RUNS = 20
     bodies, dof_maps = make_bodies()
-    for i_body, body, dof_map in enumerate(zip(bodies, dof_maps)):
+    for i_body, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
         for i_run in range(NUM_RUNS):
             await run_full_specialist(
                 database_name=f"full_specialist_body{i_body}_run{i_run}",
