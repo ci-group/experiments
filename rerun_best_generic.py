@@ -12,6 +12,7 @@ from revolve2.core.database.serializers import (
 from revolve2.core.modular_robot.brains import BrainCpgNetworkStatic
 from dof_map_brain import DofMapBrain
 from revolve2.runners.isaacgym import ModularRobotRerunner
+import numpy as np
 
 
 async def rerun_best(
@@ -49,7 +50,9 @@ async def rerun_best(
         robots = []
         for body, dof_map in zip(bodies, dof_maps):
             weight_matrix = (
-                cpg_network_structure.make_connection_weights_matrix_from_params(params)
+                cpg_network_structure.make_connection_weights_matrix_from_params(
+                    np.clip(params, -1.0, 1.0) * 2.0
+                )
             )
             initial_state = cpg_network_structure.make_uniform_state(math.sqrt(2) / 2.0)
             dof_ranges = cpg_network_structure.make_uniform_dof_ranges(1.0)
