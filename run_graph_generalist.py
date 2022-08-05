@@ -108,7 +108,7 @@ async def run_graph_generalist(
     rng_seed: int,
 ) -> None:
     NUM_EVALUATIONS = 50000
-    LEARNING_RATE = 0.05
+    LEARNING_RATE = 0.1
 
     SIMULATION_TIME = 30
     SAMPLING_FREQUENCY = 5

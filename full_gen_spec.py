@@ -22,7 +22,7 @@ async def run_full_gen_spec(
 ) -> None:
     POPULATION_SIZE = 100
     SIGMA = 0.5
-    LEARNING_RATE = 0.05
+    LEARNING_RATE = 0.1
 
     SIMULATION_TIME = 30
     SAMPLING_FREQUENCY = 5
