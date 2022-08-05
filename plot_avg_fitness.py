@@ -1,5 +1,6 @@
 """Plot the average fitness over all bodies for full_generalist, full_specialist, and graph in a single plot."""
 
+from numpy import average
 from revolve2.core.optimization.ea.openai_es import DbOpenaiESOptimizerIndividual
 from revolve2.core.database import open_database_sqlite
 import pandas
@@ -54,7 +55,7 @@ def plot_full_generalist(ax: Axes) -> None:
 
 
 def sqrtfitness(x):
-    return sum([math.sqrt(v) for v in x]) ** 2
+    return average([math.sqrt(v) for v in x]) ** 2
 
 
 def plot_full_specialist(ax: Axes) -> None:
@@ -110,15 +111,15 @@ def plot_graph(ax: Axes) -> None:
     db_prefix = "graph_generalist"
 
     combined_body_fitnesses_per_run = []
-    for run in range(NUM_RUNS):
+    for run in range(1):
         db = open_database_sqlite(f"{db_prefix}_run{run}")
         seperate_body_fitnesses = pandas.read_sql(
             select(DbGraphGeneralistOptimizerGraphNodeState),
             db,
         )[["gen_num", "graph_index", "fitness"]]
-        combined_body_fitnesses = seperate_body_fitnesses.groupby(
-            by=["gen_num", "graph_index"]
-        ).agg({"fitness": sqrtfitness})
+        combined_body_fitnesses = seperate_body_fitnesses.groupby(by=["gen_num"]).agg(
+            {"fitness": sqrtfitness}
+        )
         combined_body_fitnesses_per_run.append(combined_body_fitnesses)
 
     fitnesses_per_run = pandas.concat(combined_body_fitnesses_per_run)
@@ -140,12 +141,16 @@ def plot_graph(ax: Axes) -> None:
     describe = with_evals.groupby(by="evaluation").describe()["fitness"]
     mean = describe[["mean"]].values.squeeze()
     std = describe[["std"]].values.squeeze()
-    plt.fill_between(eval_range, mean - std, mean + std, color="#ffffaa")
-    describe[["mean"]].rename(columns={"mean": "Full specialist"}).plot(
-        ax=ax, color="#ffff00"
+    plt.fill_between(eval_range, mean - std, mean + std, color="#dddd00")
+    describe[["mean"]].rename(columns={"mean": "Graph optimization"}).plot(
+        ax=ax, color="#aaaa00"
     )
 
 
 plot_full_generalist(ax=ax)
 plot_full_specialist(ax=ax)
+plot_graph(ax=ax)
+ax.set_xlabel("Number of evaluations")
+ax.set_ylabel("Fitness (approx. m/s)")
+plt.title("Graph optimization and baseline performance")
 plt.show()
