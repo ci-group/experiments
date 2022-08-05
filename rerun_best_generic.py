@@ -64,4 +64,4 @@ async def rerun_best(
             robots.append(ModularRobot(body, brain))
 
     rerunner = ModularRobotRerunner()
-    await rerunner.rerun(robots, 10)
+    await rerunner.rerun(robots, 60)
