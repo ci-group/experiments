@@ -78,6 +78,9 @@ class GraphGeneralistOptimizer(Process):
     _sampling_frequency: float
     _control_frequency: float
 
+    """Innovation learning rate"""
+    _learning_rate: float
+
     _rng: Random
 
     _cpg_network_structure: CpgNetworkStructure
@@ -101,6 +104,7 @@ class GraphGeneralistOptimizer(Process):
         simulation_time: int,
         sampling_frequency: float,
         control_frequency: float,
+        learning_rate: float,
         headless: bool,
     ) -> None:
         self._rng = rng
@@ -111,6 +115,7 @@ class GraphGeneralistOptimizer(Process):
         self._simulation_time = simulation_time
         self._sampling_frequency = sampling_frequency
         self._control_frequency = control_frequency
+        self._learning_rate = learning_rate
         self._database = database
         self._process_id = process_id
 
@@ -289,7 +294,9 @@ class GraphGeneralistOptimizer(Process):
                 np.random.PCG64(self._rng.randint(0, 2**63))
             )  # rng is currently not numpy, but this would be very convenient. do this until that is resolved.
             permutation = nprng.standard_normal(len(node.genotype.genotype))
-            return Genotype(node.genotype.genotype + permutation, None)
+            return Genotype(
+                node.genotype.genotype + self._learning_rate * permutation, None
+            )
         else:  # migrate
             neighbours_index = self._rng.randrange(0, len(node.edges))
             chosen_neighbour = node.edges[neighbours_index]
