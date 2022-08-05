@@ -107,7 +107,7 @@ async def run_graph_generalist(
     headless: bool,
     rng_seed: int,
 ) -> None:
-    NUM_EVALUATIONS = 50000
+    NUM_EVALUATIONS = 10000
     LEARNING_RATE = 0.1
 
     SIMULATION_TIME = 30

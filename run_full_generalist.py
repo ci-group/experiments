@@ -16,7 +16,7 @@ async def run_all_full_generalist_runs() -> None:
 async def run_full_generalist(
     database_name: str, headless: bool, rng_seed: int
 ) -> None:
-    NUM_EVALUATIONS = 50000
+    NUM_EVALUATIONS = 10000
 
     bodies, dof_maps = make_bodies()
     cpg_network_structure = make_cpg_network_structure()
