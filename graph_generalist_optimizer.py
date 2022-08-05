@@ -150,6 +150,8 @@ class GraphGeneralistOptimizer(Process):
             self._generation_index += 1
 
         while self._evaluation_count < self._num_evaluations:
+            print(f"Gen: {self._generation_index} Evals: {self._evaluation_count}")
+
             possible_new_genotypes = [
                 self._get_new_genotype(node) for node in self._graph_nodes
             ]
