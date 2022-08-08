@@ -12,7 +12,8 @@ from graph_generalist_optimizer import DbGraphGeneralistOptimizerGraphNodeState
 
 NUM_RUNS = 2
 NUM_BODIES = 5
-NUM_EVALS = 50000
+NUM_EVALS = 10000
+EVAL_TIME = 30
 
 fig, ax = plt.subplots()
 
@@ -27,6 +28,7 @@ def plot_full_generalist(ax: Axes) -> None:
             select(DbOpenaiESOptimizerIndividual),
             db,
         )
+        df["fitness"] = df["fitness"] / EVAL_TIME
         dfs.append(df[["gen_num", "fitness"]])
         describe = df.groupby(by="gen_num").describe()["fitness"]
 
@@ -70,6 +72,7 @@ def plot_full_specialist(ax: Axes) -> None:
                 select(DbOpenaiESOptimizerIndividual),
                 db,
             )
+            individuals["fitness"] = individuals["fitness"] / EVAL_TIME
             fitness_avged = (
                 individuals[["gen_num", "fitness"]]
                 .groupby(by="gen_num")
@@ -111,12 +114,15 @@ def plot_graph(ax: Axes) -> None:
     db_prefix = "graph_generalist"
 
     combined_body_fitnesses_per_run = []
-    for run in range(1):
+    for run in range(NUM_RUNS):
         db = open_database_sqlite(f"{db_prefix}_run{run}")
         seperate_body_fitnesses = pandas.read_sql(
             select(DbGraphGeneralistOptimizerGraphNodeState),
             db,
         )[["gen_num", "graph_index", "fitness"]]
+        seperate_body_fitnesses["fitness"] = (
+            seperate_body_fitnesses["fitness"] / EVAL_TIME
+        )
         combined_body_fitnesses = seperate_body_fitnesses.groupby(by=["gen_num"]).agg(
             {"fitness": sqrtfitness}
         )
