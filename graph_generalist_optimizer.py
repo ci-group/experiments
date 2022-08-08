@@ -184,9 +184,10 @@ class GraphGeneralistOptimizer(Process):
         self._controllers = []
 
         for setting in settings:
-            weight_matrix = self._cpg_network_structure.make_connection_weights_matrix_from_params(
-                np.clip(setting.genotype.genotype, -1.0, 1.0)
-                * 2.0  # clip between -1 and 2 and double weights for a bit more speed
+            weight_matrix = (
+                self._cpg_network_structure.make_connection_weights_matrix_from_params(
+                    np.clip(setting.genotype.genotype, 0.0, 1.0) * 4.0 - 2.0
+                )
             )
             initial_state = self._cpg_network_structure.make_uniform_state(
                 math.sqrt(2) / 2.0

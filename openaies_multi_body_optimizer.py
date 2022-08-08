@@ -155,8 +155,7 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         for robot, dof_map in zip(self._bodies, self._dof_maps):
             for params in population:
                 weight_matrix = self._cpg_network_structure.make_connection_weights_matrix_from_params(
-                    np.clip(params, -1.0, 1.0)
-                    * 2.0  # clip between -1 and 2 and double weights for a bit more speed
+                    np.clip(params, 0.0, 1.0) * 4.0 - 2.0
                 )
                 initial_state = self._cpg_network_structure.make_uniform_state(
                     math.sqrt(2) / 2.0
