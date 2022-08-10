@@ -134,7 +134,9 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         return True
 
     def _init_runner(self, headless: bool) -> None:
-        self._runner = LocalRunner(headless=headless)
+        self._runner = LocalRunner(
+            headless=headless, max_gpu_contact_pairs=1048576 * 16
+        )
 
     async def _evaluate_population(
         self,
