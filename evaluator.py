@@ -47,6 +47,8 @@ class Evaluator:
         self._runner = LocalRunner(headless=True)
 
     async def evaluate(self, settings: List[Setting]) -> List[float]:
+        self._controllers = []
+
         batch = Batch(
             simulation_time=self.SIMULATION_TIME,
             sampling_frequency=self.SAMPLING_FREQUENCY,
@@ -77,7 +79,7 @@ class Evaluator:
             ).make_actor_and_controller()
             bounding_box = actor.calc_aabb()
             self._controllers.append(controller)
-            env = Environment()
+            env = PhysicsEnv()
             env.actors.append(
                 PosedActor(
                     actor,

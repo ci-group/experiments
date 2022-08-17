@@ -57,7 +57,8 @@ async def get_specialist_brains() -> List[
                 res_body.append(avg_params)
             res_run.append(res_body)
         res.append((params_str, res_run))
-    return []
+
+    return res
 
 
 def get_generalist_brains() -> List[
@@ -89,7 +90,7 @@ def get_generalist_brains() -> List[
             res_run.append(avg_params)
         res.append((params_str, res_run))
 
-    return []
+    return res
 
 
 def get_graph_brains() -> List[List[npt.NDArray[np.float_]]]:  # runs -> bodies -> brain
@@ -104,9 +105,6 @@ async def main() -> None:
     async with AsyncSession(database) as session:
         async with session.begin():
             await (await session.connection()).run_sync(DbBase.metadata.create_all)
-
-    cpg_network_structure = make_cpg_network_structure()
-    bodies, dof_maps = make_bodies()
 
     all_brains = []
     all_brain_names_suffix = []
@@ -127,6 +125,9 @@ async def main() -> None:
         for body_i, brain in enumerate(bodies):
             all_brains.append(brain)
             all_brain_names_suffix.append(f"graph_run{run_i}_node{body_i}")
+
+    cpg_network_structure = make_cpg_network_structure()
+    bodies, dof_maps = make_bodies()
 
     evaluator = Evaluator(cpg_network_structure)
 
