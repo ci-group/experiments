@@ -21,39 +21,43 @@ fig, ax = plt.subplots()
 def plot_full_generalist(ax: Axes) -> None:
     db_prefix = "full_generalist"
 
-    dfs = []
-    for run in range(NUM_RUNS):
-        db = open_database_sqlite(f"{db_prefix}_run{run}")
-        df = pandas.read_sql(
-            select(DbOpenaiESOptimizerIndividual),
-            db,
+    for (params_str, colora, colorb) in [
+        ("s0.5l0.1", "#aaaaff", "#0000ff"),
+        ("s0.05l0.01", "#ff00ff", "#ff00aa"),
+    ]:
+        dfs = []
+        for run in range(NUM_RUNS):
+            db = open_database_sqlite(f"{db_prefix}_{params_str}_run{run}")
+            df = pandas.read_sql(
+                select(DbOpenaiESOptimizerIndividual),
+                db,
+            )
+            df["fitness"] = df["fitness"] / EVAL_TIME
+            dfs.append(df[["gen_num", "fitness"]])
+            describe = df.groupby(by="gen_num").describe()["fitness"]
+
+        df_runs = pandas.concat(dfs)
+
+        gens = pandas.unique(df_runs[["gen_num"]].values.squeeze())
+        eval_range = [i * NUM_EVALS // len(gens) for i, _ in enumerate(gens)]
+        df_evals = pandas.DataFrame(
+            {
+                "gen_num": gens,
+                "evaluation": eval_range,
+            }
         )
-        df["fitness"] = df["fitness"] / EVAL_TIME
-        dfs.append(df[["gen_num", "fitness"]])
-        describe = df.groupby(by="gen_num").describe()["fitness"]
 
-    df_runs = pandas.concat(dfs)
+        with_evals = pandas.merge(
+            df_runs, df_evals, left_on="gen_num", right_on="gen_num", how="left"
+        )[["evaluation", "fitness"]]
 
-    gens = pandas.unique(df_runs[["gen_num"]].values.squeeze())
-    eval_range = [i * NUM_EVALS // len(gens) for i, _ in enumerate(gens)]
-    df_evals = pandas.DataFrame(
-        {
-            "gen_num": gens,
-            "evaluation": eval_range,
-        }
-    )
-
-    with_evals = pandas.merge(
-        df_runs, df_evals, left_on="gen_num", right_on="gen_num", how="left"
-    )[["evaluation", "fitness"]]
-
-    describe = with_evals.groupby(by="evaluation").describe()["fitness"]
-    mean = describe[["mean"]].values.squeeze()
-    std = describe[["std"]].values.squeeze()
-    plt.fill_between(eval_range, mean - std, mean + std, color="#aaaaff")
-    describe[["mean"]].rename(columns={"mean": "Full generalist"}).plot(
-        ax=ax, color="#0000ff"
-    )
+        describe = with_evals.groupby(by="evaluation").describe()["fitness"]
+        mean = describe[["mean"]].values.squeeze()
+        std = describe[["std"]].values.squeeze()
+        plt.fill_between(eval_range, mean - std, mean + std, color=colora)
+        describe[["mean"]].rename(
+            columns={"mean": f"Full generalist ({params_str})"}
+        ).plot(ax=ax, color=colorb)
 
 
 def sqrtfitness(x):
@@ -63,51 +67,58 @@ def sqrtfitness(x):
 def plot_full_specialist(ax: Axes) -> None:
     db_prefix = "full_specialist"
 
-    combined_body_fitnesses_per_run = []
-    for run in range(NUM_RUNS):
-        seperate_body_fitnesses = []
-        for body_i in range(NUM_BODIES):
-            db = open_database_sqlite(f"{db_prefix}_body{body_i}_run{run}")
-            individuals = pandas.read_sql(
-                select(DbOpenaiESOptimizerIndividual),
-                db,
-            )
-            individuals["fitness"] = individuals["fitness"] / EVAL_TIME
-            fitness_avged = (
-                individuals[["gen_num", "fitness"]]
-                .groupby(by="gen_num")
-                .agg({"fitness": "mean"})
-            )
-            seperate_body_fitnesses.append(fitness_avged)
-        seperate_body_fitnesses_df = pandas.concat(seperate_body_fitnesses)
-        combined_body_fitnesses = seperate_body_fitnesses_df.groupby(by="gen_num").agg(
-            {"fitness": sqrtfitness}
+    for params_str in ["s0.5l0.1"]:  # , "s0.05l0.01"]:
+        combined_body_fitnesses_per_run = []
+        for run in range(NUM_RUNS):
+            seperate_body_fitnesses = []
+            for body_i in range(NUM_BODIES):
+                db = open_database_sqlite(
+                    f"{db_prefix}_{params_str}_body{body_i}_run{run}"
+                )
+                individuals = pandas.read_sql(
+                    select(DbOpenaiESOptimizerIndividual),
+                    db,
+                )
+                individuals["fitness"] = individuals["fitness"] / EVAL_TIME
+                fitness_avged = (
+                    individuals[["gen_num", "fitness"]]
+                    .groupby(by="gen_num")
+                    .agg({"fitness": "mean"})
+                )
+                seperate_body_fitnesses.append(fitness_avged)
+            seperate_body_fitnesses_df = pandas.concat(seperate_body_fitnesses)
+            combined_body_fitnesses = seperate_body_fitnesses_df.groupby(
+                by="gen_num"
+            ).agg({"fitness": sqrtfitness})
+            combined_body_fitnesses_per_run.append(combined_body_fitnesses)
+
+        fitnesses_per_run = pandas.concat(combined_body_fitnesses_per_run)
+        fitnesses_per_run.reset_index(inplace=True)
+
+        gens = pandas.unique(fitnesses_per_run[["gen_num"]].values.squeeze())
+        eval_range = [i * NUM_EVALS // len(gens) for i, _ in enumerate(gens)]
+        df_evals = pandas.DataFrame(
+            {
+                "gen_num": gens,
+                "evaluation": eval_range,
+            }
         )
-        combined_body_fitnesses_per_run.append(combined_body_fitnesses)
 
-    fitnesses_per_run = pandas.concat(combined_body_fitnesses_per_run)
-    fitnesses_per_run.reset_index(inplace=True)
+        with_evals = pandas.merge(
+            fitnesses_per_run,
+            df_evals,
+            left_on="gen_num",
+            right_on="gen_num",
+            how="left",
+        )[["evaluation", "fitness"]]
 
-    gens = pandas.unique(fitnesses_per_run[["gen_num"]].values.squeeze())
-    eval_range = [i * NUM_EVALS // len(gens) for i, _ in enumerate(gens)]
-    df_evals = pandas.DataFrame(
-        {
-            "gen_num": gens,
-            "evaluation": eval_range,
-        }
-    )
-
-    with_evals = pandas.merge(
-        fitnesses_per_run, df_evals, left_on="gen_num", right_on="gen_num", how="left"
-    )[["evaluation", "fitness"]]
-
-    describe = with_evals.groupby(by="evaluation").describe()["fitness"]
-    mean = describe[["mean"]].values.squeeze()
-    std = describe[["std"]].values.squeeze()
-    plt.fill_between(eval_range, mean - std, mean + std, color="#ffaaaa")
-    describe[["mean"]].rename(columns={"mean": "Full specialist"}).plot(
-        ax=ax, color="#ff0000"
-    )
+        describe = with_evals.groupby(by="evaluation").describe()["fitness"]
+        mean = describe[["mean"]].values.squeeze()
+        std = describe[["std"]].values.squeeze()
+        plt.fill_between(eval_range, mean - std, mean + std, color="#ffaaaa")
+        describe[["mean"]].rename(
+            columns={"mean": f"Full specialist ({params_str})"}
+        ).plot(ax=ax, color="#ff0000")
 
 
 def plot_graph(ax: Axes) -> None:
