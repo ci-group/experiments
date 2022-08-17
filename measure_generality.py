@@ -13,6 +13,10 @@ import os
 from revolve2.core.optimization.ea.openai_es import DbOpenaiESOptimizerIndividual
 import pandas
 from revolve2.core.database.serializers import DbNdarray1xnItem
+from graph_generalist_optimizer import (
+    DbGraphGeneralistOptimizerGraphNodeState,
+    DbGenotype,
+)
 
 EVAL_TIME = 30
 SIMULATION_TIME = 30
@@ -41,7 +45,6 @@ async def get_specialist_brains() -> List[
                     ),
                     db,
                 )
-                individuals["fitness"] = individuals["fitness"] / EVAL_TIME
                 individuals = individuals[
                     individuals.gen_num == individuals.gen_num.max()
                 ]
@@ -76,7 +79,6 @@ def get_generalist_brains() -> List[
                 ),
                 db,
             )
-            individuals["fitness"] = individuals["fitness"] / EVAL_TIME
             individuals = individuals[individuals.gen_num == individuals.gen_num.max()]
             all_params = [
                 np.array(
@@ -94,7 +96,29 @@ def get_generalist_brains() -> List[
 
 
 def get_graph_brains() -> List[List[npt.NDArray[np.float_]]]:  # runs -> bodies -> brain
-    return []  # TODO
+    res = []
+
+    for run_i in range(NUM_RUNS):
+        run_res = []
+        db = open_database_sqlite(f"graph_generalist_run{run_i}")
+        nodes = pandas.read_sql(
+            select(
+                DbGraphGeneralistOptimizerGraphNodeState, DbGenotype, DbNdarray1xnItem
+            ).filter(
+                (DbGraphGeneralistOptimizerGraphNodeState.genotype_id == DbGenotype.id)
+                & (DbGenotype.nparray1xn_id == DbNdarray1xnItem.nparray1xn_id)
+            ),
+            db,
+        )
+        nodes = nodes[nodes.gen_num == nodes.gen_num.max()]
+        for body_i in range(NUM_BODIES):
+            params = np.array(
+                nodes[nodes.graph_index == body_i].sort_values(by=["array_index"]).value
+            )
+            run_res.append(params)
+        res.append(run_res)
+
+    return res
 
 
 async def main() -> None:
