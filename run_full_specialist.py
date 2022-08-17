@@ -24,19 +24,28 @@ async def dbg_run_full_specialist() -> None:
 async def run_all_full_specialist_runs() -> None:
     NUM_RUNS = 20
     bodies, dof_maps = make_bodies()
-    for i_body, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
-        for i_run in range(NUM_RUNS):
-            await run_full_specialist(
-                database_name=f"full_specialist_body{i_body}_run{i_run}",
-                headless=True,
-                rng_seed=10000 * i_body + i_run,
-                body=body,
-                dof_map=dof_map,
-            )
+    for (sigma, learning_rate) in [(0.5, 0.1), (0.05, 0.01)]:
+        for i_body, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
+            for i_run in range(NUM_RUNS):
+                await run_full_specialist(
+                    database_name=f"full_specialist_s{sigma}l{learning_rate}_body{i_body}_run{i_run}",
+                    headless=True,
+                    rng_seed=10000 * i_body + i_run,
+                    body=body,
+                    dof_map=dof_map,
+                    sigma=sigma,
+                    learning_rate=learning_rate,
+                )
 
 
 async def run_full_specialist(
-    database_name: str, headless: bool, rng_seed: int, body: Body, dof_map: List[int]
+    database_name: str,
+    headless: bool,
+    rng_seed: int,
+    body: Body,
+    dof_map: List[int],
+    sigma: float,
+    learning_rate: float,
 ) -> None:
     num_evaluations = 10000 / len(make_bodies()[0])
     cpg_network_structure = make_cpg_network_structure()
@@ -49,6 +58,8 @@ async def run_full_specialist(
         headless=headless,
         rng_seed=rng_seed,
         num_evaluations=num_evaluations,
+        sigma=sigma,
+        learning_rate=learning_rate,
     )
 
 

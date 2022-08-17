@@ -9,12 +9,23 @@ async def main() -> None:
 
 async def run_all_full_generalist_runs() -> None:
     NUM_RUNS = 20
-    for i in range(NUM_RUNS):
-        await run_full_generalist(f"full_generalist_run{i}", True, i)
+    for (sigma, learning_rate) in [(0.5, 0.1), (0.05, 0.01)]:
+        for i in range(NUM_RUNS):
+            await run_full_generalist(
+                f"full_generalists_s{sigma}l{learning_rate}_run{i}",
+                True,
+                i,
+                sigma=sigma,
+                learning_rate=learning_rate,
+            )
 
 
 async def run_full_generalist(
-    database_name: str, headless: bool, rng_seed: int
+    database_name: str,
+    headless: bool,
+    rng_seed: int,
+    sigma: float,
+    learning_rate: float,
 ) -> None:
     NUM_EVALUATIONS = 10000
 
@@ -29,6 +40,8 @@ async def run_full_generalist(
         headless,
         rng_seed,
         NUM_EVALUATIONS,
+        sigma=sigma,
+        learning_rate=learning_rate,
     )
 
 

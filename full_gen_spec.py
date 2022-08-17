@@ -19,10 +19,10 @@ async def run_full_gen_spec(
     headless: bool,
     rng_seed: int,
     num_evaluations: int,
+    sigma: float,
+    learning_rate: float,
 ) -> None:
     POPULATION_SIZE = 100
-    SIGMA = 0.5
-    LEARNING_RATE = 0.1
 
     SIMULATION_TIME = 30
     SAMPLING_FREQUENCY = 5
@@ -72,9 +72,9 @@ async def run_full_gen_spec(
             process_id,
             process_id_gen,
             rng,
-            POPULATION_SIZE,
-            SIGMA,
-            LEARNING_RATE,
+            population_size=POPULATION_SIZE,
+            sigma=sigma,
+            learning_rate=learning_rate,
             robot_bodies=bodies,
             dof_maps=dof_maps,
             simulation_time=SIMULATION_TIME,
