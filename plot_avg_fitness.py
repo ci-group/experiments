@@ -67,7 +67,10 @@ def sqrtfitness(x):
 def plot_full_specialist(ax: Axes) -> None:
     db_prefix = "full_specialist"
 
-    for params_str in ["s0.5l0.1"]:  # , "s0.05l0.01"]:
+    for (params_str, colora, colorb) in [
+        ("s0.5l0.1", "#ffaaaa", "#ff0000"),
+        ("s0.05l0.01", "#ffff00", "#aaaa00"),
+    ]:
         combined_body_fitnesses_per_run = []
         for run in range(NUM_RUNS):
             seperate_body_fitnesses = []
@@ -115,10 +118,10 @@ def plot_full_specialist(ax: Axes) -> None:
         describe = with_evals.groupby(by="evaluation").describe()["fitness"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
-        plt.fill_between(eval_range, mean - std, mean + std, color="#ffaaaa")
+        plt.fill_between(eval_range, mean - std, mean + std, color=colora)
         describe[["mean"]].rename(
             columns={"mean": f"Full specialist ({params_str})"}
-        ).plot(ax=ax, color="#ff0000")
+        ).plot(ax=ax, color=colorb)
 
 
 def plot_graph(ax: Axes) -> None:
