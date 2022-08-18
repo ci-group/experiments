@@ -3,31 +3,17 @@ TODO descr
 """
 
 from __future__ import annotations
-import math
 from random import Random
 from typing import List, Dict
 
 import numpy as np
 import numpy.typing as npt
-from pyrr import Quaternion, Vector3
 from sqlalchemy import null
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from revolve2.actor_controller import ActorController
-from revolve2.core.modular_robot import Body, ModularRobot
-from revolve2.core.modular_robot.brains import BrainCpgNetworkStatic
 from revolve2.core.optimization import ProcessIdGen
-from revolve2.core.physics.running import (
-    ActorControl,
-    ActorState,
-    Batch,
-    PosedActor,
-    Runner,
-    Environment as PhysicsEnv,
-)
 from revolve2.runners.isaacgym import LocalRunner
-from dof_map_brain import DofMapBrain
 from revolve2.core.optimization import Process
 from dataclasses import dataclass
 from typing import Optional, Dict
@@ -38,6 +24,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from revolve2.core.database.serializers import DbNdarray1xn, Ndarray1xnSerializer
+from evaluator import Evaluator, Setting as EvaluationSetting, Environment as EvalEnv
+from revolve2.core.modular_robot import Body
 
 
 @dataclass
@@ -71,8 +59,7 @@ class GraphGeneralistOptimizer(Process):
     _graph_nodes: List[GraphNode]
     _generation_index: int
 
-    _runner: Runner
-    _controllers: List[ActorController]
+    _evaluator: Evaluator
 
     _simulation_time: int
     _sampling_frequency: float
@@ -121,7 +108,7 @@ class GraphGeneralistOptimizer(Process):
 
         self._evaluation_count = 0
 
-        self._init_runner(headless)
+        self._evaluator = Evaluator(cpg_network_structure)
 
         await (await session.connection()).run_sync(DbBase.metadata.create_all)
         await Ndarray1xnSerializer.create_tables(session)
@@ -141,7 +128,10 @@ class GraphGeneralistOptimizer(Process):
     async def run(self) -> None:
         if self._generation_index == 0:
             fitnesses = await self._evaluate(
-                [Setting(node.environment, node.genotype) for node in self._graph_nodes]
+                [
+                    Setting(node.environment, node.genotype.genotype)
+                    for node in self._graph_nodes
+                ]
             )
             self._evaluation_count += len(self._graph_nodes)
             for node, fitness in zip(self._graph_nodes, fitnesses):
@@ -157,7 +147,7 @@ class GraphGeneralistOptimizer(Process):
             ]
             fitnesses = await self._evaluate(
                 [
-                    Setting(node.environment, possible_new_genotype)
+                    Setting(node.environment, possible_new_genotype.genotype)
                     for node, possible_new_genotype in zip(
                         self._graph_nodes, possible_new_genotypes
                     )
@@ -174,79 +164,15 @@ class GraphGeneralistOptimizer(Process):
             self._generation_index += 1
 
     async def _evaluate(self, settings: List[Setting]) -> List[float]:
-        batch = Batch(
-            simulation_time=self._simulation_time,
-            sampling_frequency=self._sampling_frequency,
-            control_frequency=self._control_frequency,
-            control=self._control,
-        )
-
-        self._controllers = []
-
-        for setting in settings:
-            weight_matrix = (
-                self._cpg_network_structure.make_connection_weights_matrix_from_params(
-                    np.clip(setting.genotype.genotype, 0.0, 1.0) * 4.0 - 2.0
-                )
+        evalsets = [
+            EvaluationSetting(
+                EvalEnv(setting.environment.body, setting.environment.dof_map),
+                setting.genotype,
             )
-            initial_state = self._cpg_network_structure.make_uniform_state(
-                math.sqrt(2) / 2.0
-            )
-            dof_ranges = self._cpg_network_structure.make_uniform_dof_ranges(1.0)
-
-            inner_brain = BrainCpgNetworkStatic(
-                initial_state,
-                self._cpg_network_structure.num_cpgs,
-                weight_matrix,
-                dof_ranges,
-            )
-            brain = DofMapBrain(inner_brain, setting.environment.dof_map)
-            robot = ModularRobot(setting.environment.body, brain)
-            actor, controller = robot.make_actor_and_controller()
-            bounding_box = actor.calc_aabb()
-            self._controllers.append(controller)
-            env = PhysicsEnv()
-            env.actors.append(
-                PosedActor(
-                    actor,
-                    Vector3(
-                        [
-                            0.0,
-                            0.0,
-                            bounding_box.size.z / 2.0 - bounding_box.offset.z,
-                        ]
-                    ),
-                    Quaternion(),
-                    [0.0 for _ in controller.get_dof_targets()],
-                )
-            )
-            batch.environments.append(env)
-
-        batch_results = await self._runner.run_batch(batch)
-
-        fitnesses = [
-            self._calculate_fitness(
-                environment_result.environment_states[0].actor_states[0],
-                environment_result.environment_states[-1].actor_states[0],
-            )
-            for environment_result in batch_results.environment_results
+            for setting in settings
         ]
+        fitnesses = await self._evaluator.evaluate(evalsets)
         return fitnesses
-
-    def _control(
-        self, environment_index: int, dt: float, control: ActorControl
-    ) -> None:
-        controller = self._controllers[environment_index]
-        controller.step(dt)
-        control.set_dof_targets(0, controller.get_dof_targets())
-
-    @staticmethod
-    def _calculate_fitness(begin_state: ActorState, end_state: ActorState) -> float:
-        # distance traveled on the xy plane
-        return math.sqrt(
-            (begin_state.position[0] - end_state.position[0]) ** 2
-            + ((begin_state.position[1] - end_state.position[1]) ** 2)
-        )
 
     async def _save_generation(self) -> None:
         async with AsyncSession(self._database) as session:
