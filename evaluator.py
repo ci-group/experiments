@@ -7,7 +7,7 @@ from revolve2.core.physics.running import (
     PosedActor,
     Runner,
 )
-from revolve2.runners.isaacgym import LocalRunner
+from revolve2.runners.mujoco import LocalRunner
 from dataclasses import dataclass
 import math
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
@@ -44,7 +44,7 @@ class Evaluator:
 
     def __init__(self, cpg_network_structure: CpgNetworkStructure) -> None:
         self._cpg_network_structure = cpg_network_structure
-        self._runner = LocalRunner(headless=True, max_gpu_contact_pairs=1048576 * 16)
+        self._runner = LocalRunner(headless=True)
 
     async def evaluate(self, settings: List[Setting]) -> List[float]:
         self._controllers = []

@@ -30,7 +30,7 @@ async def main() -> None:
 async def run_all_graph_generalist_runs() -> None:
     NUM_RUNS = 20
     for i in range(NUM_RUNS):
-        await run_graph_generalist(f"graph_generalist_run{i}", True, i)
+        await run_graph_generalist(f"dbs/graph_generalist_run{i}", True, i)
 
 
 def make_graph_nodes(

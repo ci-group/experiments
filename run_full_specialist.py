@@ -18,6 +18,8 @@ async def dbg_run_full_specialist() -> None:
         rng_seed=0,
         body=bodies[body_num],
         dof_map=dof_maps[body_num],
+        sigma=0.05,
+        learning_rate=0.01,
     )
 
 
@@ -28,7 +30,7 @@ async def run_all_full_specialist_runs() -> None:
         for i_body, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
             for i_run in range(NUM_RUNS):
                 await run_full_specialist(
-                    database_name=f"full_specialist_s{sigma}l{learning_rate}_body{i_body}_run{i_run}",
+                    database_name=f"dbs/full_specialist_s{sigma}l{learning_rate}_body{i_body}_run{i_run}",
                     headless=True,
                     rng_seed=10000 * i_body + i_run,
                     body=body,
