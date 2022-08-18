@@ -122,9 +122,6 @@ class GraphGeneralistOptimizer(Process):
     ) -> bool:
         return False
 
-    def _init_runner(self, headless: bool) -> None:
-        self._runner = LocalRunner(headless=headless)
-
     async def run(self) -> None:
         if self._generation_index == 0:
             fitnesses = await self._evaluate(

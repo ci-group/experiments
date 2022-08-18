@@ -44,7 +44,7 @@ class Evaluator:
 
     def __init__(self, cpg_network_structure: CpgNetworkStructure) -> None:
         self._cpg_network_structure = cpg_network_structure
-        self._runner = LocalRunner(headless=True)
+        self._runner = LocalRunner(headless=True, max_gpu_contact_pairs=1048576 * 16)
 
     async def evaluate(self, settings: List[Setting]) -> List[float]:
         self._controllers = []

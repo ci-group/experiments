@@ -3,39 +3,27 @@ Optimize multiple bodies at the same time using the same cpg controller mapped u
 Fitness unit is somewhat m/s, calculated using square(avg(sqrt(fitnesses)))
 """
 
-import math
 from random import Random
 from typing import List, Dict
 
 import numpy as np
 import numpy.typing as npt
-from pyrr import Quaternion, Vector3
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from revolve2.actor_controller import ActorController
-from revolve2.core.modular_robot import Body, ModularRobot
-from revolve2.core.modular_robot.brains import BrainCpgNetworkStatic
+from revolve2.core.modular_robot import Body
 from revolve2.core.optimization import ProcessIdGen
 from revolve2.core.optimization.ea.openai_es import OpenaiESOptimizer
-from revolve2.core.physics.running import (
-    ActorControl,
-    ActorState,
-    Batch,
-    Environment,
-    PosedActor,
-    Runner,
-)
-from revolve2.runners.isaacgym import LocalRunner
-from dof_map_brain import DofMapBrain
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
+from evaluator import Evaluator, Setting as EvaluationSetting, Environment as EvalEnv
 
 
 class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
     _bodies: List[Body]
     _dof_maps: List[Dict[int, int]]
 
-    _runner: Runner
+    _evaluator: Evaluator
     _controllers: List[ActorController]
 
     _simulation_time: int
@@ -86,7 +74,7 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
             initial_mean=initial_mean,
         )
 
-        self._init_runner(headless)
+        self._evaluator = Evaluator(cpg_network_structure)
 
         self._bodies = robot_bodies
         self._dof_maps = dof_maps
@@ -121,7 +109,7 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         ):
             return False
 
-        self._init_runner(headless)
+        self._evaluator = Evaluator(cpg_network_structure)
 
         self._bodies = robot_bodies
         self._dof_maps = dof_maps
@@ -133,11 +121,6 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
 
         return True
 
-    def _init_runner(self, headless: bool) -> None:
-        self._runner = LocalRunner(
-            headless=headless, max_gpu_contact_pairs=1048576 * 16
-        )
-
     async def _evaluate_population(
         self,
         database: AsyncEngine,
@@ -145,86 +128,16 @@ class OpenaiESMultiBodyOptimizer(OpenaiESOptimizer):
         process_id_gen: ProcessIdGen,
         population: npt.NDArray[np.float_],
     ) -> npt.NDArray[np.float_]:
-        batch = Batch(
-            simulation_time=self._simulation_time,
-            sampling_frequency=self._sampling_frequency,
-            control_frequency=self._control_frequency,
-            control=self._control,
-        )
+        evalsets: List[EvaluationSetting] = []
 
-        self._controllers = []
-
-        for robot, dof_map in zip(self._bodies, self._dof_maps):
+        for body, dof_map in zip(self._bodies, self._dof_maps):
             for params in population:
-                weight_matrix = self._cpg_network_structure.make_connection_weights_matrix_from_params(
-                    np.clip(params, 0.0, 1.0) * 4.0 - 2.0
-                )
-                initial_state = self._cpg_network_structure.make_uniform_state(
-                    math.sqrt(2) / 2.0
-                )
-                dof_ranges = self._cpg_network_structure.make_uniform_dof_ranges(1.0)
+                evalsets.append(EvaluationSetting(EvalEnv(body, dof_map), params))
 
-                inner_brain = BrainCpgNetworkStatic(
-                    initial_state,
-                    self._cpg_network_structure.num_cpgs,
-                    weight_matrix,
-                    dof_ranges,
-                )
-                brain = DofMapBrain(inner_brain, dof_map)
-                actor, controller = ModularRobot(
-                    robot, brain
-                ).make_actor_and_controller()
-                bounding_box = actor.calc_aabb()
-                self._controllers.append(controller)
-                env = Environment()
-                env.actors.append(
-                    PosedActor(
-                        actor,
-                        Vector3(
-                            [
-                                0.0,
-                                0.0,
-                                bounding_box.size.z / 2.0 - bounding_box.offset.z,
-                            ]
-                        ),
-                        Quaternion(),
-                        [0.0 for _ in controller.get_dof_targets()],
-                    )
-                )
-                batch.environments.append(env)
+        fitnesses = np.array(await self._evaluator.evaluate(evalsets))
 
-        batch_results = await self._runner.run_batch(batch)
-
-        fitnesses = np.array(
-            [
-                self._calculate_fitness(
-                    batch_results.environment_results[i]
-                    .environment_states[0]
-                    .actor_states[0],
-                    batch_results.environment_results[i]
-                    .environment_states[-1]
-                    .actor_states[0],
-                )
-                for i in range(len(population) * len(self._bodies))
-            ]
-        )
         fitnesses.resize(len(self._bodies), len(population))
         return np.average(np.sqrt(fitnesses), axis=0) ** 2
-
-    def _control(
-        self, environment_index: int, dt: float, control: ActorControl
-    ) -> None:
-        controller = self._controllers[environment_index]
-        controller.step(dt)
-        control.set_dof_targets(0, controller.get_dof_targets())
-
-    @staticmethod
-    def _calculate_fitness(begin_state: ActorState, end_state: ActorState) -> float:
-        # distance traveled on the xy plane
-        return math.sqrt(
-            (begin_state.position[0] - end_state.position[0]) ** 2
-            + ((begin_state.position[1] - end_state.position[1]) ** 2)
-        )
 
     def _must_do_next_gen(self) -> bool:
         return (
