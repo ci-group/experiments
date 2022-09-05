@@ -31,7 +31,7 @@ async def get_specialist_brains() -> List[
     Tuple[str, List[List[npt.NDArray[np.float_]]]]
 ]:  # [params, runs -> bodies -> brain]
     res = []
-    for params_str in ["s0.5l0.1"]:  # , "s0.05l0.01"]:
+    for params_str in ["s0.5l0.1", "s0.05l0.01"]:
         res_run = []
         for run_i in range(NUM_RUNS):
             res_body = []
