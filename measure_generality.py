@@ -24,6 +24,7 @@ SAMPLING_FREQUENCY = 5
 CONTROL_FREQUENCY = 60
 NUM_RUNS = 2
 NUM_BODIES = 5
+DB_LOCATION = "dbs_isaac"
 
 
 async def get_specialist_brains() -> List[
@@ -36,7 +37,7 @@ async def get_specialist_brains() -> List[
             res_body = []
             for body_i in range(NUM_BODIES):
                 db = open_database_sqlite(
-                    f"full_specialist_{params_str}_body{body_i}_run{run_i}"
+                    f"{DB_LOCATION}/full_specialist_{params_str}_body{body_i}_run{run_i}"
                 )
                 individuals = pandas.read_sql(
                     select(DbOpenaiESOptimizerIndividual, DbNdarray1xnItem).filter(
@@ -71,7 +72,9 @@ def get_generalist_brains() -> List[
     for params_str in ["s0.5l0.1", "s0.05l0.01"]:
         res_run = []
         for run_i in range(NUM_RUNS):
-            db = open_database_sqlite(f"full_generalist_{params_str}_run{run_i}")
+            db = open_database_sqlite(
+                f"{DB_LOCATION}/full_generalist_{params_str}_run{run_i}"
+            )
             individuals = pandas.read_sql(
                 select(DbOpenaiESOptimizerIndividual, DbNdarray1xnItem).filter(
                     DbOpenaiESOptimizerIndividual.individual
@@ -100,7 +103,7 @@ def get_graph_brains() -> List[List[npt.NDArray[np.float_]]]:  # runs -> bodies 
 
     for run_i in range(NUM_RUNS):
         run_res = []
-        db = open_database_sqlite(f"graph_generalist_run{run_i}")
+        db = open_database_sqlite(f"{DB_LOCATION}/graph_generalist_run{run_i}")
         nodes = pandas.read_sql(
             select(
                 DbGraphGeneralistOptimizerGraphNodeState, DbGenotype, DbNdarray1xnItem
