@@ -19,7 +19,7 @@ fig, ax = plt.subplots()
 
 
 def plot_full_generalist(ax: Axes) -> None:
-    db_prefix = "full_generalist"
+    db_prefix = "dbs/full_generalist"
 
     for (params_str, colora, colorb) in [
         ("s0.5l0.1", "#aaaaff", "#0000ff"),
@@ -65,7 +65,7 @@ def sqrtfitness(x):
 
 
 def plot_full_specialist(ax: Axes) -> None:
-    db_prefix = "full_specialist"
+    db_prefix = "dbs/full_specialist"
 
     for (params_str, colora, colorb) in [
         ("s0.5l0.1", "#ffaaaa", "#ff0000"),
@@ -125,7 +125,7 @@ def plot_full_specialist(ax: Axes) -> None:
 
 
 def plot_graph(ax: Axes) -> None:
-    db_prefix = "graph_generalist"
+    db_prefix = "dbs/graph_generalist"
 
     combined_body_fitnesses_per_run = []
     for run in range(NUM_RUNS):
