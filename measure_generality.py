@@ -137,18 +137,18 @@ async def main() -> None:
             for body_i, brain in enumerate(bodies):
                 all_brains.append(brain)
                 all_brain_names_suffix.append(
-                    f"specialist_{params}_run{run_i}_optimizedforbody{body_i}"
+                    f"run{run_i}_specialist_{params}_optimizedforbody{body_i}"
                 )
 
     for params, runs in get_generalist_brains():
         for run_i, brain in enumerate(runs):
             all_brains.append(brain)
-            all_brain_names_suffix.append(f"generalist_{params}_run{run_i}")
+            all_brain_names_suffix.append(f"run{run_i}_generalist_{params}")
 
     for run_i, bodies in enumerate(get_graph_brains()):
         for body_i, brain in enumerate(bodies):
             all_brains.append(brain)
-            all_brain_names_suffix.append(f"graph_run{run_i}_node{body_i}")
+            all_brain_names_suffix.append(f"run{run_i}_graph_node{body_i}")
 
     cpg_network_structure = make_cpg_network_structure()
     bodies, dof_maps = make_bodies()
