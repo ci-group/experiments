@@ -1,6 +1,8 @@
 import numpy.typing as npt
 import numpy as np
 from typing import List, Dict, Tuple
+
+from sqlalchemy import null
 from bodies import make_bodies, make_cpg_network_structure
 from evaluator import Evaluator, Setting, Environment
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -134,24 +136,26 @@ async def main() -> None:
             await (await session.connection()).run_sync(DbBase.metadata.create_all)
 
     all_brains = []
-    all_brain_names_suffix = []
+    all_brains_name = []
+    all_brains_run = []
     for params, runs in await get_specialist_brains():
         for run_i, bodies in enumerate(runs):
             for body_i, brain in enumerate(bodies):
                 all_brains.append(brain)
-                all_brain_names_suffix.append(
-                    f"run{run_i}_specialist_{params}_optimizedforbody{body_i}"
-                )
+                all_brains_name.append(f"specialist_{params}_optimizedforbody{body_i}")
+                all_brains_run.append(run_i)
 
     for params, runs in get_generalist_brains():
         for run_i, brain in enumerate(runs):
             all_brains.append(brain)
-            all_brain_names_suffix.append(f"run{run_i}_generalist_{params}")
+            all_brains_name.append(f"generalist_{params}")
+            all_brains_run.append(run_i)
 
     for run_i, bodies in enumerate(get_graph_brains()):
         for body_i, brain in enumerate(bodies):
             all_brains.append(brain)
-            all_brain_names_suffix.append(f"run{run_i}_graph_node{body_i}")
+            all_brains_name.append(f"graph_node{body_i}")
+            all_brains_run.append(run_i)
 
     cpg_network_structure = make_cpg_network_structure()
     bodies, dof_maps = make_bodies()
@@ -168,11 +172,13 @@ async def main() -> None:
 
     fitness_i = 0
     for body_i in range(len(bodies)):
-        for brain_name_suffix in all_brain_names_suffix:
+        for brain_name, run_i in zip(all_brains_name, all_brains_run):
             dbfitnesses.append(
                 DbFitness(
-                    brain_name=f"body{body_i}_{brain_name_suffix}",
+                    brain_name=brain_name,
                     fitness=fitnesses[fitness_i],
+                    run=run_i,
+                    body=body_i,
                 )
             )
             fitness_i += 1
@@ -197,6 +203,8 @@ class DbFitness(DbBase):
         primary_key=True,
         autoincrement=True,
     )
+    body = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+    run = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
     brain_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     fitness = sqlalchemy.Column(sqlalchemy.Float, nullable=False)
 
