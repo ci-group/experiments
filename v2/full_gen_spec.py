@@ -21,7 +21,7 @@ async def run_full_gen_spec(
     sigma: float,
     learning_rate: float,
 ) -> None:
-    POPULATION_SIZE = 2
+    POPULATION_SIZE = 100
 
     logging.basicConfig(
         level=logging.INFO,
