@@ -17,7 +17,7 @@ from revolve2.core.optimization.ea.population import (
     Parameters,
     SerializableMeasures,
 )
-from revolve2.core.optimization.ea.population.pop_list import PopList, topn
+from revolve2.core.optimization.ea.population.pop_list import PopList, replace_if_better
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from evaluator import Evaluator, Setting as EvaluationSetting, Environment as EvalEnv
@@ -158,14 +158,14 @@ class DEMultiBodyOptimizer:
 
         await self.measure(offspring)
 
-        original_selection, offspring_selection = topn(
-            self.state.population, offspring, measure="fitness", n=self.population_size
+        original_selection, offspring_selection = replace_if_better(
+            self.state.population, offspring, measure="fitness"
         )
 
         self.state.population = Population.from_existing_populations(  # type: ignore # TODO
             [self.state.population, offspring],
             [original_selection, offspring_selection],
-            [  # TODO make them not copied measures
+            [
                 "fitness",
             ],
         )
