@@ -36,7 +36,7 @@ async def run_all_full_specialist_runs() -> None:
         for i_body, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
             for i_run in range(NUM_RUNS):
                 await run_full_specialist(
-                    database_name=f"dbs/full_specialist_cr{crossover_probability}f{differential_weight}_body{i_body}_run{i_run}",
+                    database_name=f"dbs/full_specialist_p{population_size}_cr{crossover_probability}_f{differential_weight}_body{i_body}_run{i_run}",
                     headless=True,
                     rng_seed=seed,
                     body=body,

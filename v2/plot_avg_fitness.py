@@ -7,24 +7,26 @@ from sqlalchemy.future import select
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from de_multi_body_optimizer import Population, Measures, ProgramState
+from experiment_settings import NUM_RUNS, NUM_EVALUATIONS, SIMULATION_TIME, DE_PARAMS
+from bodies import make_bodies
 
-NUM_RUNS = 1
-NUM_BODIES = 5
-NUM_EVALS = 20000
-EVAL_TIME = 30
+num_bodies = len(make_bodies()[0])
 
 fig, ax = plt.subplots()
 
 
 def plot_full_generalist(ax: Axes) -> None:
-    db_prefix = "dbg_full_generalist_rippertest"
+    db_prefix = "dbs/full_generalist"
 
-    for (params_str, colora, colorb) in [
-        ("s0.5l0.1", "#aaaaff", "#0000ff"),
-    ]:
+    for (population_size, crossover_probability, differential_weight), (
+        colora,
+        colorb,
+    ) in zip(DE_PARAMS, ("#aaaaff", "#0000ff")):
         dfs = []
         for run in range(NUM_RUNS):
-            db = open_database_sqlite(f"{db_prefix}")
+            db = open_database_sqlite(
+                f"{db_prefix}_p{population_size}_cr{crossover_probability}_f{differential_weight}_run{run}"
+            )
             df = pandas.read_sql(
                 select(
                     ProgramState.table, Population.item_table, Measures.table
@@ -35,13 +37,13 @@ def plot_full_generalist(ax: Axes) -> None:
                 db,
             )
             print(df)
-            df["fitness"] = df["fitness"] / EVAL_TIME
+            df["fitness"] = df["fitness"] / SIMULATION_TIME
             dfs.append(df[["generation_index", "fitness"]])
 
         df_runs = pandas.concat(dfs)
 
         gens = pandas.unique(df_runs[["generation_index"]].values.squeeze())
-        eval_range = [i * NUM_EVALS // len(gens) for i, _ in enumerate(gens)]
+        eval_range = [i * NUM_EVALUATIONS // len(gens) for i, _ in enumerate(gens)]
         df_evals = pandas.DataFrame(
             {
                 "generation_index": gens,
@@ -62,7 +64,9 @@ def plot_full_generalist(ax: Axes) -> None:
         std = describe[["std"]].values.squeeze()
         plt.fill_between(eval_range, mean - std, mean + std, color=colora)
         describe[["mean"]].rename(
-            columns={"mean": f"Full generalist ({params_str})"}
+            columns={
+                "mean": f"Full generalist (p{population_size}_cr{crossover_probability}_f{differential_weight})"
+            }
         ).plot(ax=ax, color=colorb)
 
 
@@ -80,14 +84,14 @@ def plot_full_generalist(ax: Axes) -> None:
 #                 select(DbOpenaiESOptimizerIndividual),
 #                 db,
 #             )
-#             df["fitness"] = df["fitness"] / EVAL_TIME
+#             df["fitness"] = df["fitness"] / SIMULATION_TIME
 #             dfs.append(df[["gen_num", "fitness"]])
 #             describe = df.groupby(by="gen_num").describe()["fitness"]
 
 #         df_runs = pandas.concat(dfs)
 
 #         gens = pandas.unique(df_runs[["gen_num"]].values.squeeze())
-#         eval_range = [i * NUM_EVALS // len(gens) for i, _ in enumerate(gens)]
+#         eval_range = [i * NUM_EVALUATIONS // len(gens) for i, _ in enumerate(gens)]
 #         df_evals = pandas.DataFrame(
 #             {
 #                 "gen_num": gens,
@@ -122,7 +126,7 @@ def plot_full_generalist(ax: Axes) -> None:
 #         combined_body_fitnesses_per_run = []
 #         for run in range(NUM_RUNS):
 #             seperate_body_fitnesses = []
-#             for body_i in range(NUM_BODIES):
+#             for body_i in range(num_bodies):
 #                 db = open_database_sqlite(
 #                     f"{db_prefix}_{params_str}_body{body_i}_run{run}"
 #                 )
@@ -130,7 +134,7 @@ def plot_full_generalist(ax: Axes) -> None:
 #                     select(DbOpenaiESOptimizerIndividual),
 #                     db,
 #                 )
-#                 individuals["fitness"] = individuals["fitness"] / EVAL_TIME
+#                 individuals["fitness"] = individuals["fitness"] / SIMULATION_TIME
 #                 fitness_avged = (
 #                     individuals[["gen_num", "fitness"]]
 #                     .groupby(by="gen_num")
@@ -147,7 +151,7 @@ def plot_full_generalist(ax: Axes) -> None:
 #         fitnesses_per_run.reset_index(inplace=True)
 
 #         gens = pandas.unique(fitnesses_per_run[["gen_num"]].values.squeeze())
-#         eval_range = [i * NUM_EVALS // len(gens) for i, _ in enumerate(gens)]
+#         eval_range = [i * NUM_EVALUATIONS // len(gens) for i, _ in enumerate(gens)]
 #         df_evals = pandas.DataFrame(
 #             {
 #                 "gen_num": gens,
@@ -183,7 +187,7 @@ def plot_full_generalist(ax: Axes) -> None:
 #             db,
 #         )[["gen_num", "graph_index", "fitness"]]
 #         seperate_body_fitnesses["fitness"] = (
-#             seperate_body_fitnesses["fitness"] / EVAL_TIME
+#             seperate_body_fitnesses["fitness"] / SIMULATION_TIME
 #         )
 #         combined_body_fitnesses = seperate_body_fitnesses.groupby(by=["gen_num"]).agg(
 #             {"fitness": sqrtfitness}
@@ -194,7 +198,7 @@ def plot_full_generalist(ax: Axes) -> None:
 #     fitnesses_per_run.reset_index(inplace=True)
 
 #     gens = pandas.unique(fitnesses_per_run[["gen_num"]].values.squeeze())
-#     eval_range = [i * NUM_EVALS // len(gens) for i, _ in enumerate(gens)]
+#     eval_range = [i * NUM_EVALUATIONS // len(gens) for i, _ in enumerate(gens)]
 #     df_evals = pandas.DataFrame(
 #         {
 #             "gen_num": gens,
