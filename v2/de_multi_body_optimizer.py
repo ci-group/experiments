@@ -124,7 +124,7 @@ class DEMultiBodyOptimizer:
 
         while (self.state.generation_index + 1) * self.population_size * len(
             self.bodies
-        ) <= self.num_evaluations:
+        ) < self.num_evaluations:
             await self.evolve()
             await self.save_state()
 
