@@ -10,7 +10,7 @@ from revolve2.core.database import (
     SerializableIncrementableStruct,
 )
 from revolve2.core.database.std import Rng
-from revolve2.core.optimization.ea.algorithms import de_offspring
+from revolve2.core.optimization.ea.algorithms import de_offspring, bounce_parameters
 from revolve2.core.optimization.ea.population import (
     Individual,
     Parameters,
@@ -155,7 +155,7 @@ class DEMultiBodyOptimizer:
 
         offspring = Population(
             [
-                Individual(genotype, Measures())
+                Individual(bounce_parameters(genotype), Measures())
                 for genotype in de_offspring(
                     self.state.population,
                     self.state.rng,
