@@ -1,3 +1,4 @@
+from audioop import cross
 import logging
 
 from de_multi_body_optimizer import DEMultiBodyOptimizer
@@ -18,11 +19,10 @@ async def run_full_gen_spec(
     headless: bool,
     rng_seed: int,
     num_evaluations: int,
-    sigma: float,
-    learning_rate: float,
+    population_size: int,
+    crossover_probability: float,
+    differential_weight: float,
 ) -> None:
-    POPULATION_SIZE = 100
-
     logging.basicConfig(
         level=logging.INFO,
         format="[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s",
@@ -39,12 +39,16 @@ async def run_full_gen_spec(
     logging.info("Starting optimization process..")
 
     await DEMultiBodyOptimizer().run(
-        rng,
-        database,
-        bodies,
-        dof_maps,
-        cpg_network_structure,
-        population_size=POPULATION_SIZE,
+        rng=rng,
+        database=database,
+        robot_bodies=bodies,
+        dof_maps=dof_maps,
+        cpg_network_structure=cpg_network_structure,
+        headless=headless,
+        num_evaluations=num_evaluations,
+        population_size=population_size,
+        crossover_probability=crossover_probability,
+        differential_weight=differential_weight,
     )
 
     logging.info(f"Finished optimizing.")

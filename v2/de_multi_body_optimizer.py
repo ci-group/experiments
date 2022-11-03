@@ -55,9 +55,10 @@ class ProgramState(
 class DEMultiBodyOptimizer:
     """Program that optimizes the neural network parameters."""
 
+    num_evaluations: int
     population_size: int
-    CROSSOVER_PROBABILITY: float = 0.9
-    DIFFERENTIAL_WEIGHT: float = 0.8
+    crossover_probability: float
+    differential_weight: float
 
     bodies: List[Body]
     dof_maps: List[Dict[int, int]]
@@ -74,14 +75,21 @@ class DEMultiBodyOptimizer:
         robot_bodies: List[Body],
         dof_maps: List[Dict[int, int]],
         cpg_network_structure: CpgNetworkStructure,
+        headless: bool,
+        num_evaluations: int,
         population_size: int,
+        crossover_probability: float,
+        differential_weight: float,
     ) -> None:
         """Run the program."""
         self.db = database
-        self.evaluator = Evaluator(cpg_network_structure)
+        self.evaluator = Evaluator(cpg_network_structure, headless=headless)
         self.bodies = robot_bodies
         self.dof_maps = dof_maps
+        self.num_evaluations = num_evaluations
         self.population_size = population_size
+        self.crossover_probability = crossover_probability
+        self.differential_weight = differential_weight
 
         async with self.db.begin() as conn:
             await ProgramState.prepare_db(conn)
@@ -115,7 +123,9 @@ class DEMultiBodyOptimizer:
 
             await self.save_state()
 
-        while self.state.generation_index < 300:
+        while (
+            self.state.generation_index + 1
+        ) * self.population_size < self.num_evaluations:
             await self.evolve()
             await self.save_state()
 
@@ -150,8 +160,8 @@ class DEMultiBodyOptimizer:
                 for genotype in de_offspring(
                     self.state.population,
                     self.state.rng,
-                    self.DIFFERENTIAL_WEIGHT,
-                    self.CROSSOVER_PROBABILITY,
+                    self.differential_weight,
+                    self.crossover_probability,
                 )
             ]
         )

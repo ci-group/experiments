@@ -18,6 +18,7 @@ from pyrr import Vector3, Quaternion
 from typing import List, Dict
 import numpy.typing as npt
 import numpy as np
+from experiment_settings import SIMULATION_TIME, SAMPLING_FREQUENCY, CONTROL_FREQUENCY
 
 
 @dataclass
@@ -33,26 +34,24 @@ class Setting:
 
 
 class Evaluator:
-    SIMULATION_TIME = 30
-    SAMPLING_FREQUENCY = 5
-    CONTROL_FREQUENCY = 60
-
     _cpg_network_structure: CpgNetworkStructure
 
     _runner: Runner
     _controllers: List[ActorController]
 
-    def __init__(self, cpg_network_structure: CpgNetworkStructure) -> None:
+    def __init__(
+        self, cpg_network_structure: CpgNetworkStructure, headless: bool
+    ) -> None:
         self._cpg_network_structure = cpg_network_structure
-        self._runner = LocalRunner(headless=True, num_simulators=5)
+        self._runner = LocalRunner(headless=headless, num_simulators=60)
 
     async def evaluate(self, settings: List[Setting]) -> List[float]:
         self._controllers = []
 
         batch = Batch(
-            simulation_time=self.SIMULATION_TIME,
-            sampling_frequency=self.SAMPLING_FREQUENCY,
-            control_frequency=self.CONTROL_FREQUENCY,
+            simulation_time=SIMULATION_TIME,
+            sampling_frequency=SAMPLING_FREQUENCY,
+            control_frequency=CONTROL_FREQUENCY,
             control=self._control,
         )
 
