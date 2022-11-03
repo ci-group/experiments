@@ -7,18 +7,27 @@ SEED_BASE = 23678400
 
 async def main() -> None:
     # await run_all_full_generalist_runs()  # For the actual experiments
+    dbg_run_full_generalist()
+
+
+async def dbg_run_full_generalist() -> None:
     await run_full_generalist(
-        f"dbg_full_generalist", True, 0, 100, 0.9, 0.8
-    )  # For debugging only
+        database_name=f"dbg_full_generalist",
+        bodies=True,
+        dof_maps=0,
+        population_size=100,
+        crossover_probability=0.9,
+        differential_weight=0.8,
+    )
 
 
 async def run_all_full_generalist_runs() -> None:
     for (population_size, crossover_probability, differential_weight) in DE_PARAMS:
         for i in range(NUM_RUNS):
             await run_full_generalist(
-                f"dbs/full_generalist_cr{crossover_probability}f{differential_weight}_run{i}",
-                True,
-                SEED_BASE + i,
+                database_name=f"dbs/full_generalist_cr{crossover_probability}f{differential_weight}_run{i}",
+                bodies=True,
+                dof_maps=SEED_BASE + i,
                 population_size=population_size,
                 crossover_probability=crossover_probability,
                 differential_weight=differential_weight,
