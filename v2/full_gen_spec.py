@@ -1,4 +1,3 @@
-from audioop import cross
 import logging
 
 from de_multi_body_optimizer import DEMultiBodyOptimizer
