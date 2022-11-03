@@ -8,7 +8,6 @@ from typing import List, Optional, Dict
 import numpy as np
 from revolve2.core.database import (
     SerializableIncrementableStruct,
-    open_async_database_sqlite,
 )
 from revolve2.core.database.std import Rng
 from revolve2.core.optimization.ea.algorithms import de_offspring
@@ -123,9 +122,9 @@ class DEMultiBodyOptimizer:
 
             await self.save_state()
 
-        while (
-            self.state.generation_index + 1
-        ) * self.population_size < self.num_evaluations:
+        while (self.state.generation_index + 1) * self.population_size * len(
+            self.bodies
+        ) < self.num_evaluations:
             await self.evolve()
             await self.save_state()
 
