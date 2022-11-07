@@ -9,6 +9,7 @@ from matplotlib.axes import Axes
 from de_multi_body_optimizer import Population, Measures, ProgramState
 from experiment_settings import NUM_RUNS, NUM_EVALUATIONS, SIMULATION_TIME, DE_PARAMS
 from bodies import make_bodies
+from typing import List
 
 num_bodies = len(make_bodies()[0])
 
@@ -21,8 +22,8 @@ def plot_full_generalist(ax: Axes) -> None:
     for (population_size, crossover_probability, differential_weight), (
         colora,
         colorb,
-    ) in zip(DE_PARAMS, ("#aaaaff", "#0000ff")):
-        dfs = []
+    ) in zip(DE_PARAMS, [("#aaaaff", "#0000ff"), ("#ff00ff", "#ff00aa")]):
+        dfs_per_run: List[pandas.DataFrame] = []
         for run in range(NUM_RUNS):
             db = open_database_sqlite(
                 f"{db_prefix}_p{population_size}_cr{crossover_probability}_f{differential_weight}_run{run}"
@@ -36,14 +37,18 @@ def plot_full_generalist(ax: Axes) -> None:
                 ),
                 db,
             )
-            print(df)
-            df["fitness"] = df["fitness"] / SIMULATION_TIME
-            dfs.append(df[["generation_index", "fitness"]])
+            df["fitness"] = df["fitness"] / SIMULATION_TIME * 60
+            dfs_per_run.append(df[["generation_index", "fitness"]])
 
-        df_runs = pandas.concat(dfs)
+        max_per_run = []
+        for df in dfs_per_run:
+            max_per_run.append(df.groupby(by="generation_index").max().reset_index())
+        max_concatenated = pandas.concat(max_per_run)
 
-        gens = pandas.unique(df_runs[["generation_index"]].values.squeeze())
-        eval_range = [i * NUM_EVALUATIONS // len(gens) for i, _ in enumerate(gens)]
+        gens = pandas.unique(max_concatenated[["generation_index"]].values.squeeze())
+        eval_range = [
+            (i + 1) * NUM_EVALUATIONS // len(gens) for i, _ in enumerate(gens)
+        ]
         df_evals = pandas.DataFrame(
             {
                 "generation_index": gens,
@@ -52,7 +57,7 @@ def plot_full_generalist(ax: Axes) -> None:
         )
 
         with_evals = pandas.merge(
-            df_runs,
+            max_concatenated,
             df_evals,
             left_on="generation_index",
             right_on="generation_index",
@@ -223,6 +228,6 @@ plot_full_generalist(ax=ax)
 # plot_full_specialist(ax=ax)
 # plot_graph(ax=ax)
 ax.set_xlabel("Number of evaluations")
-ax.set_ylabel("Fitness (approx. m/s)")
+ax.set_ylabel("Fitness (approx. m/min)")
 plt.title("Graph optimization and baseline performance")
 plt.show()
