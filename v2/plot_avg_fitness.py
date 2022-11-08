@@ -27,10 +27,11 @@ fig, ax = plt.subplots()
 def plot_full_generalist(ax: Axes) -> None:
     db_prefix = "dbs/full_generalist"
 
-    for (population_size, crossover_probability, differential_weight), (
-        colora,
-        colorb,
-    ) in zip(DE_PARAMS, [("#aaaaff", "#0000ff"), ("#ff00ff", "#ff00aa")]):
+    for (
+        population_size,
+        crossover_probability,
+        differential_weight,
+    ), plot_color in zip(DE_PARAMS, ["#0000ff", "#ff00aa"]):
         dfs_per_run: List[pandas.DataFrame] = []
         for run in range(NUM_RUNS):
             db = open_database_sqlite(
@@ -83,12 +84,12 @@ def plot_full_generalist(ax: Axes) -> None:
         describe = with_evals.groupby(by="evaluation").describe()["fitness"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
-        plt.fill_between(eval_range, mean - std, mean + std, color=colora)
+        plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")
         describe[["mean"]].rename(
             columns={
                 "mean": f"Full generalist (p{population_size}_cr{crossover_probability}_f{differential_weight})"
             }
-        ).plot(ax=ax, color=colorb)
+        ).plot(ax=ax, color=plot_color)
 
 
 def sqrtfitness(x):
@@ -98,10 +99,11 @@ def sqrtfitness(x):
 def plot_full_specialist(ax: Axes) -> None:
     db_prefix = "dbs/full_specialist"
 
-    for (population_size, crossover_probability, differential_weight), (
-        colora,
-        colorb,
-    ) in zip(DE_PARAMS, [("#ffaaaa", "#ff0000"), ("#ffff00", "#aaaa00")]):
+    for (
+        population_size,
+        crossover_probability,
+        differential_weight,
+    ), plot_color in zip(DE_PARAMS, ["#ff0000", "#aaaa00"]):
         dfs_per_run_per_body: List[List[pandas.DataFrame]] = []
         for run in range(NUM_RUNS):
             dfs_per_body: List[pandas.DataFrame] = []
@@ -169,21 +171,18 @@ def plot_full_specialist(ax: Axes) -> None:
         describe = with_evals.groupby(by="evaluation").describe()["fitness"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
-        plt.fill_between(eval_range, mean - std, mean + std, color=colora)
+        plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")
         describe[["mean"]].rename(
             columns={
                 "mean": f"Full specialist (p{population_size}_cr{crossover_probability}_f{differential_weight})"
             }
-        ).plot(ax=ax, color=colorb)
+        ).plot(ax=ax, color=plot_color)
 
 
 def plot_graph(ax: Axes) -> None:
     db_prefix = "dbs/graph"
 
-    for (standard_deviation), (
-        colora,
-        colorb,
-    ) in zip(GRAPH_PARAMS, [("#aaaa00", "#dddd00")]):
+    for (standard_deviation), plot_color in zip(GRAPH_PARAMS, ["#dddd00"]):
         fitnesses_per_run: List[pandas.DataFrame] = []
         for run in range(NUM_RUNS):
             # db = open_database_sqlite(f"{db_prefix}_s{standard_deviation}_run{run}")
@@ -220,10 +219,10 @@ def plot_graph(ax: Axes) -> None:
         describe = fitnesses.groupby(by="performed_evaluations").describe()["fitness"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
-        # plt.fill_between(eval_range, mean - std, mean + std, color=colora)
+        # plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")
         describe[["mean"]].rename(
             columns={"mean": f"Graph optimization (s{standard_deviation})"}
-        ).plot(ax=ax, color=colorb)
+        ).plot(ax=ax, color=plot_color)
 
 
 plot_full_generalist(ax=ax)
