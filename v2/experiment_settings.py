@@ -11,3 +11,6 @@ DE_PARAMS = [
     (100, 0.9, 0.8),
     (100, 0.9, 0.2),
 ]  # population_size, crossover_probability, differential_weight
+
+# Graph settings
+GRAPH_PARAMS = (0.2,)  # standard deviation
