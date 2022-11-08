@@ -1,6 +1,5 @@
 from bodies import make_cpg_network_structure, make_bodies
 import logging
-from random import Random
 from revolve2.core.database import open_async_database_sqlite
 from graph_optimizer import GraphOptimizer
 from graph import Graph, Node
@@ -14,17 +13,17 @@ from bodies import (
     make_body_5,
     make_cpg_network_structure,
 )
-from revolve2.actor_controllers.cpg import CpgNetworkStructure
 import numpy as np
 from graph import Graph
 from experiment_settings import GRAPH_PARAMS, NUM_RUNS, NUM_EVALUATIONS
+import argparse
 
 SEED_BASE = 732091019
 
 
 async def main() -> None:
-    # await run_all_graph_generalist_runs()  # For the actual experiments
-    await dbg_run_graph()
+    await run_all_graph_generalist_runs()  # For the actual experiments
+    # await dbg_run_graph()
 
 
 async def dbg_run_graph() -> None:
@@ -37,17 +36,17 @@ async def dbg_run_graph() -> None:
 
 
 async def run_all_graph_generalist_runs() -> None:
-    seed = SEED_BASE
+    parser = argparse.ArgumentParser()
+    parser.add_argument("run", type=int)
+    args = parser.parse_args()
 
     for standard_deviation in GRAPH_PARAMS:
-        for i in range(NUM_RUNS):
-            await run_graph_generalist(
-                database_name=f"dbs/graph_s{standard_deviation}_run{i}",
-                headless=True,
-                rng_seed=seed,
-                standard_deviation=standard_deviation,
-            )
-            seed += 1
+        await run_graph_generalist(
+            database_name=f"dbs/graph_s{standard_deviation}_run{args.run}",
+            headless=True,
+            rng_seed=SEED_BASE + len(GRAPH_PARAMS * args.run),
+            standard_deviation=standard_deviation,
+        )
 
 
 def make_graph() -> Graph:
