@@ -204,11 +204,11 @@ def plot_graph(ax: Axes) -> None:
                     )
                 ),
                 db,
-            )[["generation_index", "fitness"]]
+            )[["fitness", "performed_evaluations"]]
             df["fitness"] = df["fitness"] / SIMULATION_TIME * 10
 
             combined_fitnesses_per_gen = (
-                df.groupby(by=["generation_index"])
+                df.groupby(by=["performed_evaluations"])
                 .agg({"fitness": sqrtfitness})
                 .reset_index()
             )
@@ -217,29 +217,10 @@ def plot_graph(ax: Axes) -> None:
 
         fitnesses = pandas.concat(fitnesses_per_run)
 
-        gens = pandas.unique(fitnesses[["generation_index"]].values.squeeze())
-        eval_range = [
-            (i + 1) * NUM_EVALUATIONS // len(gens) for i, _ in enumerate(gens)
-        ]
-        df_evals = pandas.DataFrame(
-            {
-                "generation_index": gens,
-                "evaluation": eval_range,
-            }
-        )
-
-        with_evals = pandas.merge(
-            fitnesses,
-            df_evals,
-            left_on="generation_index",
-            right_on="generation_index",
-            how="left",
-        )[["evaluation", "fitness"]]
-
-        describe = with_evals.groupby(by="evaluation").describe()["fitness"]
+        describe = fitnesses.groupby(by="performed_evaluations").describe()["fitness"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
-        plt.fill_between(eval_range, mean - std, mean + std, color=colora)
+        # plt.fill_between(eval_range, mean - std, mean + std, color=colora)
         describe[["mean"]].rename(
             columns={"mean": f"Graph optimization (s{standard_deviation})"}
         ).plot(ax=ax, color=colorb)

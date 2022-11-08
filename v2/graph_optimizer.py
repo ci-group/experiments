@@ -50,6 +50,7 @@ class ProgramState(
     rng: Rng
     population: Population
     generation_index: int
+    performed_evaluations: int
 
 
 @dataclass
@@ -130,19 +131,18 @@ class GraphOptimizer:
             ]
 
             initial_generation_index = 0
+            initial_performed_evaluations = len(settings)
 
             self.state = ProgramState(
                 rng=rng,
                 population=initial_population,
                 generation_index=initial_generation_index,
+                performed_evaluations=initial_performed_evaluations,
             )
 
             await self.save_state()
 
-        # TODO eval count
-        while (self.state.generation_index + 1) * len(self.graph.nodes) * len(
-            self.bodies
-        ) < self.num_evaluations:
+        while self.state.performed_evaluations < self.num_evaluations:
             await self.evolve()
             await self.save_state()
 
@@ -191,6 +191,7 @@ class GraphOptimizer:
                 for g, m in zip(possible_new_genotypes, await self.measure(settings))
             ]
         )
+        self.state.performed_evaluations += len(settings)
 
         original_selection, offspring_selection = replace_if_better(
             self.state.population, possible_new_individuals, measure="fitness"
