@@ -185,8 +185,7 @@ def plot_graph(ax: Axes) -> None:
     for (standard_deviation), plot_color in zip(GRAPH_PARAMS, ["#dddd00"]):
         fitnesses_per_run: List[pandas.DataFrame] = []
         for run in range(NUM_RUNS):
-            # db = open_database_sqlite(f"{db_prefix}_s{standard_deviation}_run{run}")
-            db = open_database_sqlite(f"dbg_graph")
+            db = open_database_sqlite(f"{db_prefix}_s{standard_deviation}_run{run}")
             df = pandas.read_sql(
                 select(
                     graph_optimizer.ProgramState.table,
@@ -219,9 +218,14 @@ def plot_graph(ax: Axes) -> None:
         describe = fitnesses.groupby(by="performed_evaluations").describe()["fitness"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
-        # plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")
+        plt.fill_between(
+            fitnesses["performed_evaluations"].unique(),
+            mean - std,
+            mean + std,
+            color=f"{plot_color}33",
+        )
         describe[["mean"]].rename(
-            columns={"mean": f"Graph optimization (s{standard_deviation})"}
+            columns={"mean": f"Graph optimization (std{standard_deviation})"}
         ).plot(ax=ax, color=plot_color)
 
 
