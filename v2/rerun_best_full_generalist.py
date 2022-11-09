@@ -18,14 +18,9 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
-    bodies, dof_maps = make_bodies()
-    cpg_network_structure = make_cpg_network_structure()
-
     await rerun_best(
         database_name=args.database,
-        bodies=[bodies[args.body]],
-        dof_maps=[dof_maps[args.body]],
-        cpg_network_structure=cpg_network_structure,
+        body=args.body,
     )
 
 

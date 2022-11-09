@@ -11,16 +11,16 @@ async def main() -> None:
         type=str,
         help="The database to fetch brain parameters from.",
     )
-    # args = parser.parse_args()
-
-    bodies, dof_maps = make_bodies()
-    cpg_network_structure = make_cpg_network_structure()
+    parser.add_argument(
+        "body",
+        type=int,
+        help="Number of the body to simulate.",
+    )
+    args = parser.parse_args()
 
     await rerun_best(
-        database_name=123,
-        bodies=bodies,
-        dof_maps=dof_maps,
-        cpg_network_structure=cpg_network_structure,
+        database_name=args.database,
+        body=args.body,
     )
 
 
