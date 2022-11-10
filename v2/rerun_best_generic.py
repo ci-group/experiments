@@ -1,4 +1,4 @@
-from typing import List
+from typing import Optional
 from revolve2.core.modular_robot import ModularRobot
 from revolve2.core.database import open_async_database_sqlite, open_database_sqlite
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -11,11 +11,11 @@ from revolve2.runners.mujoco import ModularRobotRerunner
 import numpy as np
 from bodies import make_bodies, make_cpg_network_structure
 import pandas
+from revolve2.core.physics.running import RecordSettings
 
 
 async def rerun_best(
-    database_name: str,
-    body: int,
+    database_name: str, body: int, record_to_directory: Optional[str]
 ) -> None:
     db = open_database_sqlite(database_name)
     df = pandas.read_sql(
@@ -72,5 +72,15 @@ async def rerun_best(
         brain = DofMapBrain(inner_brain, dof_map)
         robots.append(ModularRobot(body, brain))
 
+    robots.append(robots[0])
+
     rerunner = ModularRobotRerunner()
-    await rerunner.rerun(robots, 60, simulation_time=30)
+    await rerunner.rerun(
+        robots,
+        60,
+        simulation_time=30,
+        start_paused=False,
+        record_settings=None
+        if record_to_directory is None
+        else RecordSettings(video_directory=record_to_directory),
+    )

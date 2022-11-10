@@ -12,6 +12,7 @@ from revolve2.runners.mujoco import ModularRobotRerunner
 from revolve2.core.modular_robot import ModularRobot
 import pandas
 import numpy as np
+from revolve2.core.physics.running import RecordSettings
 
 
 async def main() -> None:
@@ -25,6 +26,12 @@ async def main() -> None:
         "body",
         type=int,
         help="Number of the body to simulate.",
+    )
+    parser.add_argument(
+        "-r",
+        "--record_to_directory",
+        type=str,
+        help="If set, videos are recorded and stored in this directory.",
     )
     args = parser.parse_args()
 
@@ -83,7 +90,15 @@ async def main() -> None:
         robots.append(ModularRobot(body, brain))
 
     rerunner = ModularRobotRerunner()
-    await rerunner.rerun(robots, 60, simulation_time=30)
+    await rerunner.rerun(
+        robots,
+        60,
+        simulation_time=30,
+        start_paused=False,
+        record_settings=None
+        if args.record_to_directory is None
+        else RecordSettings(video_directory=args.record_to_directory),
+    )
 
 
 if __name__ == "__main__":
