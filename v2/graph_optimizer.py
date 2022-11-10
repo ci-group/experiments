@@ -5,12 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Dict
 
-import numpy as np
 from revolve2.core.database import (
     SerializableIncrementableStruct,
 )
 from revolve2.core.database.std import Rng
-from revolve2.core.optimization.ea.algorithms import de_offspring, bounce_parameters
+from revolve2.core.optimization.ea.algorithms import bounce_parameters
 from revolve2.core.optimization.ea.population import (
     Individual,
     Parameters,
