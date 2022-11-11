@@ -33,7 +33,7 @@ async def run_full_gen_spec(
     logging.info(f"Opening database: {database_name}")
 
     # database
-    database = open_async_database_sqlite(database_name)
+    database = open_async_database_sqlite(database_name, create=True)
 
     logging.info("Starting optimization process..")
 

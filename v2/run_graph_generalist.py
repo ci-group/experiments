@@ -82,7 +82,7 @@ async def run_graph_generalist(
     logging.info(f"Opening database: {database_name}")
 
     # database
-    database = open_async_database_sqlite(database_name)
+    database = open_async_database_sqlite(database_name, create=True)
 
     logging.info("Starting optimization process..")
 
