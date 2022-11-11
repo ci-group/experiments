@@ -72,8 +72,6 @@ async def rerun_best(
         brain = DofMapBrain(inner_brain, dof_map)
         robots.append(ModularRobot(body, brain))
 
-    robots.append(robots[0])
-
     rerunner = ModularRobotRerunner()
     await rerunner.rerun(
         robots,
@@ -82,5 +80,5 @@ async def rerun_best(
         start_paused=False,
         record_settings=None
         if record_to_directory is None
-        else RecordSettings(video_directory=record_to_directory),
+        else RecordSettings(video_directory=record_to_directory, fps=60),
     )

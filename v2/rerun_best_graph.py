@@ -97,7 +97,7 @@ async def main() -> None:
         start_paused=False,
         record_settings=None
         if args.record_to_directory is None
-        else RecordSettings(video_directory=args.record_to_directory),
+        else RecordSettings(video_directory=args.record_to_directory, fps=60),
     )
 
 
