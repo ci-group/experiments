@@ -16,16 +16,21 @@ def make_body_3() -> Tuple[Body, List[int]]:
     body.core.right.attachment.attachment = Brick(0.0)
 
     body.core.back = ActiveHinge(0.0)
-    body.core.back.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment = Brick(math.pi / 2.0)
+    body.core.back.attachment = Brick(0.0)
+    body.core.back.attachment.front = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment = Brick(math.pi / 2.0)
 
-    body.core.back.attachment.attachment.left = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.left.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.left.attachment.attachment = Brick(0.0)
+    body.core.back.attachment.front.attachment.left = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment.left.attachment = ActiveHinge(
+        math.pi / 2.0
+    )
+    body.core.back.attachment.front.attachment.left.attachment.attachment = Brick(0.0)
 
-    body.core.back.attachment.attachment.right = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.right.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.right.attachment.attachment = Brick(0.0)
+    body.core.back.attachment.front.attachment.right = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment.right.attachment = ActiveHinge(
+        math.pi / 2.0
+    )
+    body.core.back.attachment.front.attachment.right.attachment.attachment = Brick(0.0)
 
     body.finalize()
 
@@ -35,11 +40,11 @@ def make_body_3() -> Tuple[Body, List[int]]:
         body.core.right.id: 2,
         body.core.right.attachment.id: 3,
         body.core.back.id: 4,
-        body.core.back.attachment.id: 5,
-        body.core.back.attachment.attachment.left.id: 6,
-        body.core.back.attachment.attachment.left.attachment.id: 7,
-        body.core.back.attachment.attachment.right.id: 8,
-        body.core.back.attachment.attachment.right.attachment.id: 9,
+        body.core.back.attachment.front.id: 5,
+        body.core.back.attachment.front.attachment.left.id: 6,
+        body.core.back.attachment.front.attachment.left.attachment.id: 7,
+        body.core.back.attachment.front.attachment.right.id: 8,
+        body.core.back.attachment.front.attachment.right.attachment.id: 9,
     }
 
     return body, dof_map
@@ -54,16 +59,21 @@ def make_body_2() -> Tuple[Body, List[int]]:
     body.core.right.attachment.attachment = Brick(0.0)
 
     body.core.back = ActiveHinge(0.0)
-    body.core.back.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment = Brick(math.pi / 2.0)
+    body.core.back.attachment = Brick(0.0)
+    body.core.back.attachment.front = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment = Brick(math.pi / 2.0)
 
-    body.core.back.attachment.attachment.left = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.left.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.left.attachment.attachment = Brick(0.0)
+    body.core.back.attachment.front.attachment.left = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment.left.attachment = ActiveHinge(
+        math.pi / 2.0
+    )
+    body.core.back.attachment.front.attachment.left.attachment.attachment = Brick(0.0)
 
-    body.core.back.attachment.attachment.right = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.right.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.right.attachment.attachment = Brick(0.0)
+    body.core.back.attachment.front.attachment.right = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment.right.attachment = ActiveHinge(
+        math.pi / 2.0
+    )
+    body.core.back.attachment.front.attachment.right.attachment.attachment = Brick(0.0)
 
     body.finalize()
 
@@ -71,11 +81,11 @@ def make_body_2() -> Tuple[Body, List[int]]:
         body.core.right.id: 2,
         body.core.right.attachment.id: 3,
         body.core.back.id: 4,
-        body.core.back.attachment.id: 5,
-        body.core.back.attachment.attachment.left.id: 6,
-        body.core.back.attachment.attachment.left.attachment.id: 7,
-        body.core.back.attachment.attachment.right.id: 8,
-        body.core.back.attachment.attachment.right.attachment.id: 9,
+        body.core.back.attachment.front.id: 5,
+        body.core.back.attachment.front.attachment.left.id: 6,
+        body.core.back.attachment.front.attachment.left.attachment.id: 7,
+        body.core.back.attachment.front.attachment.right.id: 8,
+        body.core.back.attachment.front.attachment.right.attachment.id: 9,
     }
 
     return body, dof_map
@@ -93,12 +103,15 @@ def make_body_4() -> Tuple[Body, List[int]]:
     body.core.right.attachment.attachment = Brick(0.0)
 
     body.core.back = ActiveHinge(0.0)
-    body.core.back.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment = Brick(math.pi / 2.0)
+    body.core.back.attachment = Brick(0.0)
+    body.core.back.attachment.front = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment = Brick(math.pi / 2.0)
 
-    body.core.back.attachment.attachment.left = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.left.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.left.attachment.attachment = Brick(0.0)
+    body.core.back.attachment.front.attachment.left = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment.left.attachment = ActiveHinge(
+        math.pi / 2.0
+    )
+    body.core.back.attachment.front.attachment.left.attachment.attachment = Brick(0.0)
 
     body.finalize()
 
@@ -108,9 +121,9 @@ def make_body_4() -> Tuple[Body, List[int]]:
         body.core.right.id: 2,
         body.core.right.attachment.id: 3,
         body.core.back.id: 4,
-        body.core.back.attachment.id: 5,
-        body.core.back.attachment.attachment.left.id: 6,
-        body.core.back.attachment.attachment.left.attachment.id: 7,
+        body.core.back.attachment.front.id: 5,
+        body.core.back.attachment.front.attachment.left.id: 6,
+        body.core.back.attachment.front.attachment.left.attachment.id: 7,
     }
 
     return body, dof_map
@@ -121,26 +134,31 @@ def make_body_1() -> Tuple[Body, List[int]]:
     body = Body()
 
     body.core.back = ActiveHinge(0.0)
-    body.core.back.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment = Brick(math.pi / 2.0)
+    body.core.back.attachment = Brick(0.0)
+    body.core.back.attachment.front = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment = Brick(math.pi / 2.0)
 
-    body.core.back.attachment.attachment.left = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.left.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.left.attachment.attachment = Brick(0.0)
+    body.core.back.attachment.front.attachment.left = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment.left.attachment = ActiveHinge(
+        math.pi / 2.0
+    )
+    body.core.back.attachment.front.attachment.left.attachment.attachment = Brick(0.0)
 
-    body.core.back.attachment.attachment.right = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.right.attachment = ActiveHinge(math.pi / 2.0)
-    body.core.back.attachment.attachment.right.attachment.attachment = Brick(0.0)
+    body.core.back.attachment.front.attachment.right = ActiveHinge(math.pi / 2.0)
+    body.core.back.attachment.front.attachment.right.attachment = ActiveHinge(
+        math.pi / 2.0
+    )
+    body.core.back.attachment.front.attachment.right.attachment.attachment = Brick(0.0)
 
     body.finalize()
 
     dof_map = {
         body.core.back.id: 4,
-        body.core.back.attachment.id: 5,
-        body.core.back.attachment.attachment.left.id: 6,
-        body.core.back.attachment.attachment.left.attachment.id: 7,
-        body.core.back.attachment.attachment.right.id: 8,
-        body.core.back.attachment.attachment.right.attachment.id: 9,
+        body.core.back.attachment.front.id: 5,
+        body.core.back.attachment.front.attachment.left.id: 6,
+        body.core.back.attachment.front.attachment.left.attachment.id: 7,
+        body.core.back.attachment.front.attachment.right.id: 8,
+        body.core.back.attachment.front.attachment.right.attachment.id: 9,
     }
 
     return body, dof_map
