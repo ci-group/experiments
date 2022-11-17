@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from revolve2.core.modular_robot import ModularRobot
 from revolve2.core.database import open_async_database_sqlite, open_database_sqlite
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -12,10 +12,14 @@ import numpy as np
 from bodies import make_bodies, make_cpg_network_structure
 import pandas
 from revolve2.core.physics.running import RecordSettings
+from terrain_generator import terrain_generator
 
 
 async def rerun_best(
-    database_name: str, body: int, record_to_directory: Optional[str]
+    database_name: str,
+    body: int,
+    record_to_directory: Optional[str],
+    start_paused: bool,
 ) -> None:
     db = open_database_sqlite(database_name)
     df = pandas.read_sql(
@@ -73,11 +77,15 @@ async def rerun_best(
         robots.append(ModularRobot(body, brain))
 
     rerunner = ModularRobotRerunner()
+
+    ruggedness = 1.0
+
     await rerunner.rerun(
         robots,
         60,
+        terrain=terrain_generator((5.0, 5.0), max_height=0.1 * ruggedness, density=1.5),
         simulation_time=30,
-        start_paused=False,
+        start_paused=start_paused,
         record_settings=None
         if record_to_directory is None
         else RecordSettings(video_directory=record_to_directory, fps=60),

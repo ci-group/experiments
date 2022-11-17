@@ -33,6 +33,12 @@ async def main() -> None:
         type=str,
         help="If set, videos are recorded and stored in this directory.",
     )
+    parser.add_argument(
+        "-p",
+        "--start_paused",
+        action="store_true",
+        help="If set, simulation starts paused.",
+    )
     args = parser.parse_args()
 
     db = open_database_sqlite(args.database)
@@ -94,7 +100,7 @@ async def main() -> None:
         robots,
         60,
         simulation_time=30,
-        start_paused=False,
+        start_paused=args.start_paused,
         record_settings=None
         if args.record_to_directory is None
         else RecordSettings(video_directory=args.record_to_directory, fps=60),

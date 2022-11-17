@@ -22,12 +22,19 @@ async def main() -> None:
         type=str,
         help="If set, videos are recorded and stored in this directory.",
     )
+    parser.add_argument(
+        "-p",
+        "--start_paused",
+        action="store_true",
+        help="If set, simulation starts paused.",
+    )
     args = parser.parse_args()
 
     await rerun_best(
         database_name=args.database,
         body=args.body,
         record_to_directory=args.record_to_directory,
+        start_paused=args.start_paused,
     )
 
 
