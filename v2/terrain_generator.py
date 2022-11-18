@@ -4,6 +4,8 @@ from revolve2.core.physics.running import geometry
 from typing import Tuple, List
 from noise import pnoise2
 import math
+import numpy as np
+import numpy.typing as npt
 
 
 def terrain_generator(
@@ -26,16 +28,11 @@ def terrain_generator(
     )
     bowl = bowl_heighmap(num_edges=num_edges)
 
-    heightmap = [
-        [
-            0.0
-            if ruggedness + bowlness == 0.0
-            else (yrugged * ruggedness + ybowl * bowlness) / (ruggedness + bowlness)
-            for yrugged, ybowl in zip(xrugged, xbowl)
-        ]
-        for xrugged, xbowl in zip(rugged, bowl)
-    ]
     max_height = ruggedness + bowlness
+    if max_height == 0.0:
+        heightmap = np.zeros(num_edges)
+    else:
+        heightmap = (ruggedness * rugged + bowlness * bowl) / (ruggedness + bowlness)
 
     return Terrain(
         static_geometry=[
@@ -54,37 +51,40 @@ def rugged_heightmap(
     size: Tuple[float, float],
     num_edges: Tuple[int, int],
     density: float = 1.0,
-) -> List[List[float]]:
+) -> npt.NDArray[np.float_]:
     # TODO the maximum height is not really 1.0.
     OCTAVE = 10
     C1 = 4.0  # arbitrary constant to get nice noise
 
-    return [
-        [
-            pnoise2(
+    return np.fromfunction(
+        np.vectorize(
+            lambda y, x: pnoise2(
                 x / num_edges[0] * C1 * size[0] * density,
                 y / num_edges[1] * C1 * size[1] * density,
                 OCTAVE,
-            )
-            for y in range(num_edges[1])
-        ]
-        for x in range(num_edges[0])
-    ]
+            ),
+            otypes=[float],
+        ),
+        num_edges,
+        dtype=float,
+    )
 
 
 def bowl_heighmap(
     num_edges: Tuple[int, int],
 ) -> List[List[float]]:
-    return [
-        [
-            (x / num_edges[0] * 2.0 - 1.0) ** 2 + (y / num_edges[1] * 2.0 - 1.0) ** 2
+    return np.fromfunction(
+        np.vectorize(
+            lambda y, x: (x / num_edges[0] * 2.0 - 1.0) ** 2
+            + (y / num_edges[1] * 2.0 - 1.0) ** 2
             if math.sqrt(
                 (x / num_edges[0] * 2.0 - 1.0) ** 2
                 + (y / num_edges[1] * 2.0 - 1.0) ** 2
             )
             <= 1.0
-            else 0.0
-            for y in range(num_edges[1])
-        ]
-        for x in range(num_edges[0])
-    ]
+            else 0.0,
+            otypes=[float],
+        ),
+        num_edges,
+        dtype=float,
+    )
