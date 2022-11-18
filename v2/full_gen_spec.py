@@ -8,12 +8,12 @@ from typing import List
 from revolve2.core.modular_robot import Body
 from revolve2.core.database.std import Rng
 import numpy as np
+from environment import Environment
 
 
 async def run_full_gen_spec(
     database_name: str,
-    bodies: List[Body],
-    dof_maps: List[List[int]],
+    environments: List[Environment],
     cpg_network_structure: CpgNetworkStructure,
     headless: bool,
     rng_seed: int,
@@ -40,8 +40,7 @@ async def run_full_gen_spec(
     await DEMultiBodyOptimizer().run(
         rng=rng,
         database=database,
-        robot_bodies=bodies,
-        dof_maps=dof_maps,
+        environments=environments,
         cpg_network_structure=cpg_network_structure,
         headless=headless,
         num_evaluations=num_evaluations,

@@ -1,13 +1,25 @@
 from full_gen_spec import run_full_gen_spec
 from bodies import make_bodies, make_cpg_network_structure
-from experiment_settings import NUM_EVALUATIONS, NUM_RUNS, DE_PARAMS
+from experiment_settings import (
+    NUM_EVALUATIONS,
+    NUM_RUNS,
+    DE_PARAMS,
+    RUGGEDNESS_RANGE,
+    BOWLNESS_RANGE,
+    TERRAIN_SIZE,
+    TERRAIN_GRANULARITY,
+)
+from environment import Environment
+import itertools
+
+from terrain_generator import terrain_generator
 
 SEED_BASE = 23678400
 
 
 async def main() -> None:
-    await run_all_full_generalist_runs()  # For the actual experiments
-    # await dbg_run_full_generalist()
+    # await run_all_full_generalist_runs()  # For the actual experiments
+    await dbg_run_full_generalist()
 
 
 async def dbg_run_full_generalist() -> None:
@@ -46,13 +58,22 @@ async def run_full_generalist(
     differential_weight: float,
 ) -> None:
     bodies, dof_maps = make_bodies()
-    cpg_network_structure = make_cpg_network_structure()
+
+    environments = [
+        Environment(
+            body,
+            dof_map,
+            terrain_generator(TERRAIN_SIZE, ruggedness, bowlness, TERRAIN_GRANULARITY),
+        )
+        for (body, dof_map), ruggedness, bowlness in itertools.product(
+            zip(bodies, dof_maps), RUGGEDNESS_RANGE, BOWLNESS_RANGE
+        )
+    ]
 
     await run_full_gen_spec(
         database_name=database_name,
-        bodies=bodies,
-        dof_maps=dof_maps,
-        cpg_network_structure=cpg_network_structure,
+        environments=environments,
+        cpg_network_structure=make_cpg_network_structure(),
         headless=headless,
         rng_seed=rng_seed,
         num_evaluations=NUM_EVALUATIONS,

@@ -19,16 +19,14 @@ from typing import List, Dict
 import numpy.typing as npt
 import numpy as np
 from experiment_settings import SIMULATION_TIME, SAMPLING_FREQUENCY, CONTROL_FREQUENCY
+from environment import Environment
+from revolve2.core.physics.environment_actor_controller import (
+    EnvironmentActorController,
+)
 
 
 @dataclass
-class Environment:
-    body: Body
-    dof_map: Dict[int, int]
-
-
-@dataclass
-class Setting:
+class EvaluationDescription:
     environment: Environment
     genotype: npt.NDArray[np.float_]  # Nx1 array
 
@@ -37,22 +35,18 @@ class Evaluator:
     _cpg_network_structure: CpgNetworkStructure
 
     _runner: Runner
-    _controllers: List[ActorController]
 
     def __init__(
         self, cpg_network_structure: CpgNetworkStructure, headless: bool
     ) -> None:
         self._cpg_network_structure = cpg_network_structure
-        self._runner = LocalRunner(headless=headless, num_simulators=60)
+        self._runner = LocalRunner(headless=headless, num_simulators=1)
 
-    async def evaluate(self, settings: List[Setting]) -> List[float]:
-        self._controllers = []
-
+    async def evaluate(self, settings: List[EvaluationDescription]) -> List[float]:
         batch = Batch(
             simulation_time=SIMULATION_TIME,
             sampling_frequency=SAMPLING_FREQUENCY,
             control_frequency=CONTROL_FREQUENCY,
-            control=self._control,
         )
 
         for setting in settings:
@@ -77,8 +71,7 @@ class Evaluator:
                 setting.environment.body, brain
             ).make_actor_and_controller()
             bounding_box = actor.calc_aabb()
-            self._controllers.append(controller)
-            env = PhysicsEnv()
+            env = PhysicsEnv(EnvironmentActorController(controller))
             env.actors.append(
                 PosedActor(
                     actor,

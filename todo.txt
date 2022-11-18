@@ -1,9 +1,7 @@
-- fix physics in environment
+- different terrains
 - measure & plot all brains in all envs
 - cache graph fitness
-- different terrains
 - simulated annealing
-- more evaluations
 - force generalists for graph optimizer
 
 ...

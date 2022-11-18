@@ -19,9 +19,9 @@ from revolve2.core.optimization.ea.population import (
 from revolve2.core.optimization.ea.population.pop_list import PopList, replace_if_better
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from evaluator import Evaluator, Setting as EvaluationSetting, Environment as EvalEnv
+from evaluator import Evaluator, EvaluationDescription
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
-from revolve2.core.modular_robot import Body
+from environment import Environment
 
 Genotype = Parameters
 
@@ -59,8 +59,7 @@ class DEMultiBodyOptimizer:
     crossover_probability: float
     differential_weight: float
 
-    bodies: List[Body]
-    dof_maps: List[Dict[int, int]]
+    environments: List[Environment]
 
     db: AsyncEngine
     evaluator: Evaluator
@@ -71,8 +70,7 @@ class DEMultiBodyOptimizer:
         self,
         rng: Rng,
         database: AsyncEngine,
-        robot_bodies: List[Body],
-        dof_maps: List[Dict[int, int]],
+        environments: List[Environment],
         cpg_network_structure: CpgNetworkStructure,
         headless: bool,
         num_evaluations: int,
@@ -83,8 +81,7 @@ class DEMultiBodyOptimizer:
         """Run the program."""
         self.db = database
         self.evaluator = Evaluator(cpg_network_structure, headless=headless)
-        self.bodies = robot_bodies
-        self.dof_maps = dof_maps
+        self.environments = environments
         self.num_evaluations = num_evaluations
         self.population_size = population_size
         self.crossover_probability = crossover_probability
@@ -123,7 +120,7 @@ class DEMultiBodyOptimizer:
             await self.save_state()
 
         while (self.state.generation_index + 1) * self.population_size * len(
-            self.bodies
+            self.environments
         ) < self.num_evaluations:
             await self.evolve()
             await self.save_state()
@@ -185,17 +182,15 @@ class DEMultiBodyOptimizer:
 
         :param pop: The population.
         """
-        evalsets: List[EvaluationSetting] = []
+        evalsets: List[EvaluationDescription] = []
 
-        for body, dof_map in zip(self.bodies, self.dof_maps):
+        for environment in self.environments:
             for individual in population:
-                evalsets.append(
-                    EvaluationSetting(EvalEnv(body, dof_map), individual.genotype)
-                )
+                evalsets.append(EvaluationDescription(environment, individual.genotype))
 
         fitnesses = np.array(await self.evaluator.evaluate(evalsets))
 
-        fitnesses.resize(len(self.bodies), len(population))
+        fitnesses.resize(len(self.environments), len(population))
         combined_fitnesses = np.average(np.sqrt(fitnesses), axis=0) ** 2
 
         for individual, fitness in zip(population, combined_fitnesses):

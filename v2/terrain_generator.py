@@ -28,7 +28,9 @@ def terrain_generator(
 
     heightmap = [
         [
-            (yrugged * ruggedness + ybowl * bowlness) / (ruggedness + bowlness)
+            0.0
+            if ruggedness + bowlness == 0.0
+            else (yrugged * ruggedness + ybowl * bowlness) / (ruggedness + bowlness)
             for yrugged, ybowl in zip(xrugged, xbowl)
         ]
         for xrugged, xbowl in zip(rugged, bowl)
