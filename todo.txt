@@ -1,4 +1,6 @@
 - different terrains
+    - contact buffer full
+    - robot position
 - measure & plot all brains in all envs
 - cache graph fitness
 - simulated annealing

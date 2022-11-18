@@ -13,6 +13,7 @@ from bodies import make_bodies, make_cpg_network_structure
 import pandas
 from revolve2.core.physics.running import RecordSettings
 from terrain_generator import terrain_generator
+from experiment_settings import TERRAIN_GRANULARITY
 
 
 async def rerun_best(
@@ -78,12 +79,18 @@ async def rerun_best(
 
     rerunner = ModularRobotRerunner()
 
-    ruggedness = 1.0
+    ruggedness = 0.4
+    bowlness = 2.0
 
     await rerunner.rerun(
         robots,
         60,
-        terrain=terrain_generator((5.0, 5.0), max_height=0.1 * ruggedness, density=1.5),
+        terrain=terrain_generator(
+            (5.0, 5.0),
+            ruggedness=ruggedness,
+            bowlness=bowlness,
+            granularity_multiplier=TERRAIN_GRANULARITY,
+        ),
         simulation_time=30,
         start_paused=start_paused,
         record_settings=None

@@ -20,5 +20,7 @@ GRAPH_PARAMS = (0.2,)  # standard deviation
 # Terrain parameters
 TERRAIN_SIZE = (5.0, 5.0)
 TERRAIN_GRANULARITY = 0.5
-RUGGEDNESS_RANGE = np.arange(0.0, 0.2, 0.1)  # np.arange(0.0, 0.5, 0.1)
-BOWLNESS_RANGE = np.arange(0.0, 0.8, 0.4)  # np.arange(0.0, 2.0, 0.4)
+RUGGEDNESS_RANGE = np.arange(0.0, 0.5, 0.1)
+BOWLNESS_RANGE = np.arange(0.0, 2.5, 0.5)
+# RUGGEDNESS_RANGE = np.arange(0.0, 0.2, 0.1)
+# BOWLNESS_RANGE = np.arange(0.0, 1.0, 0.5)
