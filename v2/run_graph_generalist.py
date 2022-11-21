@@ -6,11 +6,6 @@ from graph import Graph, Node
 from revolve2.core.database.std import Rng
 from typing import List, Tuple
 from bodies import (
-    make_body_1,
-    make_body_2,
-    make_body_3,
-    make_body_4,
-    make_body_5,
     make_cpg_network_structure,
 )
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -33,8 +28,8 @@ SEED_BASE = 732091019
 
 
 async def main() -> None:
-    await run_all_graph_generalist_runs()  # For the actual experiments
-    # await dbg_run_graph()
+    # await run_all_graph_generalist_runs()  # For the actual experiments
+    await dbg_run_graph()
 
 
 async def dbg_run_graph() -> None:
@@ -63,36 +58,46 @@ async def run_all_graph_generalist_runs() -> None:
 def make_graph() -> Tuple[Graph, List[Environment]]:
     bodies, dof_maps = make_bodies()
 
-    # TODO
-    nodes = [Node(i) for i in range(5)]
+    nodes: List[Node] = []
+    envs: List[Environment] = []
 
-    nodes[0].neighbours.append(nodes[1])
-
-    nodes[1].neighbours.append(nodes[0])
-    nodes[1].neighbours.append(nodes[2])
-
-    nodes[2].neighbours.append(nodes[1])
-    nodes[2].neighbours.append(nodes[3])
-
-    nodes[3].neighbours.append(nodes[2])
-    nodes[3].neighbours.append(nodes[4])
-
-    nodes[4].neighbours.append(nodes[3])
-
-    return Graph([nodes[0], nodes[1], nodes[2], nodes[3], nodes[4]]), [
-        Environment(
-            body=body,
-            dof_map=dof_map,
-            terrain=terrain_generator(
+    for ruggedness_i, ruggedness in enumerate(RUGGEDNESS_RANGE):
+        for bowlness_i, bowlness in enumerate(BOWLNESS_RANGE):
+            terrain = terrain_generator(
                 size=TERRAIN_SIZE,
-                ruggedness=RUGGEDNESS_RANGE[0],
-                bowlness=BOWLNESS_RANGE[0],
+                ruggedness=ruggedness,
+                bowlness=bowlness,
                 granularity_multiplier=TERRAIN_GRANULARITY,
-            ),
-            name=EnvironmentName(body_num=body_i, ruggedness_num=0, bowlness_num=0),
-        )
-        for body_i, (body, dof_map) in enumerate(zip(bodies, dof_maps))
-    ]
+            )
+            for body_i, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
+                node = Node(len(nodes))
+                nodes.append(node)
+                envs.append(
+                    Environment(
+                        bodies[body_i],
+                        dof_maps[body_i],
+                        terrain,
+                        EnvironmentName(body_i, ruggedness_i, bowlness_i),
+                    )
+                )
+                nodes[-1].env = envs[-1]
+
+    for node1 in nodes:
+        for node2 in nodes:
+            if node1 == node2:
+                continue
+
+            env1 = envs[node1.index]
+            env2 = envs[node2.index]
+
+            if (
+                abs(env1.name.body_num - env2.name.body_num) <= 1
+                and abs(env1.name.ruggedness_num - env2.name.ruggedness_num) <= 1
+                and abs(env1.name.bowlness_num - env2.name.bowlness_num) <= 1
+            ):
+                node1.neighbours.append(node2)
+
+    return Graph(nodes), envs
 
 
 async def run_graph_generalist(
@@ -111,12 +116,14 @@ async def run_graph_generalist(
     # database
     database = open_async_database_sqlite(database_name, create=True)
 
-    logging.info("Starting optimization process..")
+    logging.info("Generating terrains..")
 
     # graph description
     graph, environments = make_graph()
 
     cpg_network_structure = make_cpg_network_structure()
+
+    logging.info("Generating done.")
 
     # save environment names. bit of a hack to not double save
     async with database.begin() as conn:
@@ -141,7 +148,6 @@ async def run_graph_generalist(
         num_evaluations=NUM_EVALUATIONS,
         standard_deviation=standard_deviation,
     )
-
     logging.info(f"Finished optimizing.")
 
 
