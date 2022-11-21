@@ -18,10 +18,11 @@ from revolve2.core.optimization.ea.population import (
 from revolve2.core.optimization.ea.population.pop_list import PopList, replace_if_better
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from evaluator import Evaluator, Setting as EvaluationSetting, Environment as EvalEnv
+from evaluator import Evaluator, EvaluationDescription
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 from revolve2.core.modular_robot import Body
 from graph import Graph, Node
+from environment import Environment
 
 Genotype = Parameters
 
@@ -53,12 +54,6 @@ class ProgramState(
 
 
 @dataclass
-class Environment:
-    body: Body
-    dof_map: Dict[int, int]
-
-
-@dataclass
 class Setting:
     environment: Environment
     genotype: Genotype
@@ -70,8 +65,7 @@ class GraphOptimizer:
     num_evaluations: int
     standard_deviation: float
 
-    bodies: List[Body]
-    dof_maps: List[Dict[int, int]]
+    environments: List[Environment]
     graph: Graph
 
     db: AsyncEngine
@@ -83,8 +77,7 @@ class GraphOptimizer:
         self,
         rng: Rng,
         database: AsyncEngine,
-        robot_bodies: List[Body],
-        dof_maps: List[Dict[int, int]],
+        environments: List[Environment],
         graph: Graph,
         cpg_network_structure: CpgNetworkStructure,
         headless: bool,
@@ -94,8 +87,7 @@ class GraphOptimizer:
         """Run the program."""
         self.db = database
         self.evaluator = Evaluator(cpg_network_structure, headless=headless)
-        self.bodies = robot_bodies
-        self.dof_maps = dof_maps
+        self.environments = environments
         self.graph = graph
         self.num_evaluations = num_evaluations
         self.standard_deviation = standard_deviation
@@ -116,13 +108,11 @@ class GraphOptimizer:
                 for _ in range(len(self.graph.nodes))
             ]
 
-            settings = [
-                Setting(Environment(body, dof_map), genotype)
-                for body, dof_map, genotype in zip(
-                    self.bodies, self.dof_maps, initial_genotypes
-                )
+            eval_descrs = [
+                EvaluationDescription(env, genotype)
+                for env, genotype in zip(self.environments, initial_genotypes)
             ]
-            all_measures = await self.measure(settings)
+            all_measures = await self.measure(eval_descrs)
 
             initial_population = [
                 Individual(genotype, measures)
@@ -130,7 +120,7 @@ class GraphOptimizer:
             ]
 
             initial_generation_index = 0
-            initial_performed_evaluations = len(settings)
+            initial_performed_evaluations = len(eval_descrs)
 
             self.state = ProgramState(
                 rng=rng,
@@ -177,20 +167,18 @@ class GraphOptimizer:
             for node in self.graph.nodes
         ]
 
-        settings = [
-            Setting(Environment(body, dof_map), possible_new_genotype)
-            for body, dof_map, possible_new_genotype in zip(
-                self.bodies, self.dof_maps, possible_new_genotypes
-            )
+        eval_descrs = [
+            EvaluationDescription(env, genotype)
+            for env, genotype in zip(self.environments, possible_new_genotypes)
         ]
 
         possible_new_individuals = Population(
             [
                 Individual(g, m)
-                for g, m in zip(possible_new_genotypes, await self.measure(settings))
+                for g, m in zip(possible_new_genotypes, await self.measure(eval_descrs))
             ]
         )
-        self.state.performed_evaluations += len(settings)
+        self.state.performed_evaluations += len(eval_descrs)
 
         original_selection, offspring_selection = replace_if_better(
             self.state.population, possible_new_individuals, measure="fitness"
@@ -220,21 +208,12 @@ class GraphOptimizer:
             chosen_neighbour = node.neighbours[neighbours_index]
             return pop[chosen_neighbour.index].genotype
 
-    async def measure(self, settings: List[Setting]) -> List[Measures]:
+    async def measure(self, eval_descrs: List[EvaluationDescription]) -> List[Measures]:
         """
         Measure all provided genotypes.
 
         :param pop: The genotypes.
         :returns: Measures for the genotypes.
         """
-        evalsets: List[EvaluationSetting] = []
-
-        evalsets = [
-            EvaluationSetting(
-                EvalEnv(setting.environment.body, setting.environment.dof_map),
-                setting.genotype,
-            )
-            for setting in settings
-        ]
-        fitnesses = await self.evaluator.evaluate(evalsets)
+        fitnesses = await self.evaluator.evaluate(eval_descrs)
         return [Measures(fitness=fitness) for fitness in fitnesses]

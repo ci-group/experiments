@@ -1,4 +1,3 @@
-from revolve2.actor_controller import ActorController
 from revolve2.core.physics.running import (
     ActorControl,
     ActorState,
@@ -13,22 +12,22 @@ import math
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 from revolve2.core.modular_robot.brains import BrainCpgNetworkStatic
 from dof_map_brain import DofMapBrain
-from revolve2.core.modular_robot import Body, ModularRobot
+from revolve2.core.modular_robot import ModularRobot
 from pyrr import Vector3, Quaternion
-from typing import List, Dict
-import numpy.typing as npt
+from typing import List
 import numpy as np
 from experiment_settings import SIMULATION_TIME, SAMPLING_FREQUENCY, CONTROL_FREQUENCY
 from environment import Environment
 from revolve2.core.physics.environment_actor_controller import (
     EnvironmentActorController,
 )
+from revolve2.core.optimization.ea.population import Parameters
 
 
 @dataclass
 class EvaluationDescription:
     environment: Environment
-    genotype: npt.NDArray[np.float_]  # Nx1 array
+    genotype: Parameters
 
 
 class Evaluator:

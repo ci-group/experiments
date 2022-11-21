@@ -5,10 +5,11 @@ from de_multi_body_optimizer import DEMultiBodyOptimizer
 from revolve2.core.database import open_async_database_sqlite
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 from typing import List
-from revolve2.core.modular_robot import Body
 from revolve2.core.database.std import Rng
 import numpy as np
 from environment import Environment
+from environment_name import EnvironmentName
+from sqlalchemy.ext.asyncio.session import AsyncSession
 
 
 async def run_full_gen_spec(
@@ -34,6 +35,17 @@ async def run_full_gen_spec(
 
     # database
     database = open_async_database_sqlite(database_name, create=True)
+
+    # save environment names. bit of a hack to not double save
+    async with database.begin() as conn:
+        await EnvironmentName.prepare_db(conn)
+
+    async with AsyncSession(database) as ses:
+        async with ses.begin():
+            if (await EnvironmentName.from_db(ses, 1)) is None:
+                await EnvironmentName.to_db_multiple(
+                    ses, [env.name for env in environments]
+                )
 
     logging.info("Starting optimization process..")
 

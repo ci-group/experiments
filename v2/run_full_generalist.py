@@ -11,6 +11,7 @@ from experiment_settings import (
 )
 from environment import Environment
 import itertools
+from environment_name import EnvironmentName
 
 from terrain_generator import terrain_generator
 
@@ -64,9 +65,15 @@ async def run_full_generalist(
             body,
             dof_map,
             terrain_generator(TERRAIN_SIZE, ruggedness, bowlness, TERRAIN_GRANULARITY),
+            EnvironmentName(body_i, ruggedness_i, bowlness_i),
         )
-        for (body, dof_map), ruggedness, bowlness in itertools.product(
-            zip(bodies, dof_maps), RUGGEDNESS_RANGE, BOWLNESS_RANGE
+        for (body_i, (body, dof_map)), (ruggedness_i, ruggedness), (
+            bowlness_i,
+            bowlness,
+        ) in itertools.product(
+            enumerate(zip(bodies, dof_maps)),
+            enumerate(RUGGEDNESS_RANGE),
+            enumerate(BOWLNESS_RANGE),
         )
     ]
 

@@ -4,7 +4,7 @@ from revolve2.core.database import open_async_database_sqlite
 from graph_optimizer import GraphOptimizer
 from graph import Graph, Node
 from revolve2.core.database.std import Rng
-from typing import List
+from typing import List, Tuple
 from bodies import (
     make_body_1,
     make_body_2,
@@ -13,10 +13,21 @@ from bodies import (
     make_body_5,
     make_cpg_network_structure,
 )
+from sqlalchemy.ext.asyncio.session import AsyncSession
+from environment import Environment
 import numpy as np
 from graph import Graph
-from experiment_settings import GRAPH_PARAMS, NUM_RUNS, NUM_EVALUATIONS
+from experiment_settings import (
+    GRAPH_PARAMS,
+    NUM_EVALUATIONS,
+    RUGGEDNESS_RANGE,
+    BOWLNESS_RANGE,
+    TERRAIN_SIZE,
+    TERRAIN_GRANULARITY,
+)
 import argparse
+from terrain_generator import terrain_generator
+from environment_name import EnvironmentName
 
 SEED_BASE = 732091019
 
@@ -49,7 +60,10 @@ async def run_all_graph_generalist_runs() -> None:
         )
 
 
-def make_graph() -> Graph:
+def make_graph() -> Tuple[Graph, List[Environment]]:
+    bodies, dof_maps = make_bodies()
+
+    # TODO
     nodes = [Node(i) for i in range(5)]
 
     nodes[0].neighbours.append(nodes[1])
@@ -65,7 +79,20 @@ def make_graph() -> Graph:
 
     nodes[4].neighbours.append(nodes[3])
 
-    return Graph([nodes[0], nodes[1], nodes[2], nodes[3], nodes[4]])
+    return Graph([nodes[0], nodes[1], nodes[2], nodes[3], nodes[4]]), [
+        Environment(
+            body=body,
+            dof_map=dof_map,
+            terrain=terrain_generator(
+                size=TERRAIN_SIZE,
+                ruggedness=RUGGEDNESS_RANGE[0],
+                bowlness=BOWLNESS_RANGE[0],
+                granularity_multiplier=TERRAIN_GRANULARITY,
+            ),
+            name=EnvironmentName(body_num=body_i, ruggedness_num=0, bowlness_num=0),
+        )
+        for body_i, (body, dof_map) in enumerate(zip(bodies, dof_maps))
+    ]
 
 
 async def run_graph_generalist(
@@ -87,17 +114,27 @@ async def run_graph_generalist(
     logging.info("Starting optimization process..")
 
     # graph description
-    bodies, dof_maps = make_bodies()
+    graph, environments = make_graph()
+
     cpg_network_structure = make_cpg_network_structure()
-    graph = make_graph()
+
+    # save environment names. bit of a hack to not double save
+    async with database.begin() as conn:
+        await EnvironmentName.prepare_db(conn)
+
+    async with AsyncSession(database) as ses:
+        async with ses.begin():
+            if (await EnvironmentName.from_db(ses, 1)) is None:
+                await EnvironmentName.to_db_multiple(
+                    ses, [env.name for env in environments]
+                )
 
     logging.info("Starting optimization process..")
 
     await GraphOptimizer().run(
         rng=rng,
         database=database,
-        robot_bodies=bodies,
-        dof_maps=dof_maps,
+        environments=environments,
         graph=graph,
         cpg_network_structure=cpg_network_structure,
         headless=headless,
