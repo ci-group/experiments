@@ -41,17 +41,17 @@ class Evaluator:
         self._cpg_network_structure = cpg_network_structure
         self._runner = LocalRunner(headless=headless, num_simulators=1)
 
-    async def evaluate(self, settings: List[EvaluationDescription]) -> List[float]:
+    async def evaluate(self, eval_descrs: List[EvaluationDescription]) -> List[float]:
         batch = Batch(
             simulation_time=SIMULATION_TIME,
             sampling_frequency=SAMPLING_FREQUENCY,
             control_frequency=CONTROL_FREQUENCY,
         )
 
-        for setting in settings:
+        for eval_descr in eval_descrs:
             weight_matrix = (
                 self._cpg_network_structure.make_connection_weights_matrix_from_params(
-                    np.clip(setting.genotype, 0.0, 1.0) * 4.0 - 2.0
+                    np.clip(eval_descr.genotype, 0.0, 1.0) * 4.0 - 2.0
                 )
             )
             initial_state = self._cpg_network_structure.make_uniform_state(
@@ -65,9 +65,9 @@ class Evaluator:
                 weight_matrix,
                 dof_ranges,
             )
-            brain = DofMapBrain(inner_brain, setting.environment.dof_map)
+            brain = DofMapBrain(inner_brain, eval_descr.environment.dof_map)
             actor, controller = ModularRobot(
-                setting.environment.body, brain
+                eval_descr.environment.body, brain
             ).make_actor_and_controller()
             bounding_box = actor.calc_aabb()
             env = PhysicsEnv(EnvironmentActorController(controller))
@@ -85,6 +85,7 @@ class Evaluator:
                     [0.0 for _ in controller.get_dof_targets()],
                 )
             )
+            env.static_geometries.extend(eval_descr.environment.terrain.static_geometry)
             batch.environments.append(env)
 
         batch_results = await self._runner.run_batch(batch)

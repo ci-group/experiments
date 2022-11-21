@@ -31,6 +31,7 @@ def terrain_generator(
     max_height = ruggedness + bowlness
     if max_height == 0.0:
         heightmap = np.zeros(num_edges)
+        max_height = 1.0
     else:
         heightmap = (ruggedness * rugged + bowlness * bowl) / (ruggedness + bowlness)
 
