@@ -19,8 +19,8 @@ SEED_BASE = 23678400
 
 
 async def main() -> None:
-    # await run_all_full_generalist_runs()  # For the actual experiments
-    await dbg_run_full_generalist()
+    await run_all_full_generalist_runs()  # For the actual experiments
+    # await dbg_run_full_generalist()
 
 
 async def dbg_run_full_generalist() -> None:

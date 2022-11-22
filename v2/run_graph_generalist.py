@@ -28,8 +28,8 @@ SEED_BASE = 732091019
 
 
 async def main() -> None:
-    # await run_all_graph_generalist_runs()  # For the actual experiments
-    await dbg_run_graph()
+    await run_all_graph_generalist_runs()  # For the actual experiments
+    # await dbg_run_graph()
 
 
 async def dbg_run_graph() -> None:
