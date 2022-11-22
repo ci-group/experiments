@@ -19,8 +19,8 @@ from experiment_settings import (
     BOWLNESS_RANGE,
     TERRAIN_SIZE,
     TERRAIN_GRANULARITY,
+    NUM_RUNS,
 )
-import argparse
 from terrain_generator import terrain_generator
 from environment_name import EnvironmentName
 
@@ -42,17 +42,14 @@ async def dbg_run_graph() -> None:
 
 
 async def run_all_graph_generalist_runs() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("run", type=int)
-    args = parser.parse_args()
-
     for standard_deviation in GRAPH_PARAMS:
-        await run_graph_generalist(
-            database_name=f"dbs/graph_s{standard_deviation}_run{args.run}",
-            headless=True,
-            rng_seed=SEED_BASE + len(GRAPH_PARAMS * args.run),
-            standard_deviation=standard_deviation,
-        )
+        for i in range(NUM_RUNS):
+            await run_graph_generalist(
+                database_name=f"dbs/graph_s{standard_deviation}_run{i}",
+                headless=True,
+                rng_seed=SEED_BASE + len(GRAPH_PARAMS * i),
+                standard_deviation=standard_deviation,
+            )
 
 
 def make_graph() -> Tuple[Graph, List[Environment]]:
