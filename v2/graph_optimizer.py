@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict
+from typing import List, Optional
 
 from revolve2.core.database import (
     SerializableIncrementableStruct,
@@ -20,7 +20,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from evaluator import Evaluator, EvaluationDescription
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
-from revolve2.core.modular_robot import Body
 from graph import Graph, Node
 from environment import Environment
 
