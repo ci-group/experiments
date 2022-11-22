@@ -41,7 +41,7 @@ async def run_all_full_generalist_runs() -> None:
         for i in range(NUM_RUNS):
             await run_full_generalist(
                 database_name=f"dbs/full_generalist_p{population_size}_cr{crossover_probability}_f{differential_weight}_run{i}",
-                headless=False,
+                headless=True,
                 rng_seed=seed,
                 population_size=population_size,
                 crossover_probability=crossover_probability,
