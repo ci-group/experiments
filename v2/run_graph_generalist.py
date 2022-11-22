@@ -74,8 +74,8 @@ def make_graph() -> Tuple[Graph, List[Environment]]:
                 nodes.append(node)
                 envs.append(
                     Environment(
-                        bodies[body_i],
-                        dof_maps[body_i],
+                        body,
+                        dof_map,
                         terrain,
                         EnvironmentName(body_i, ruggedness_i, bowlness_i),
                     )

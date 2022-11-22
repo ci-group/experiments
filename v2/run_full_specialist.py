@@ -11,7 +11,6 @@ from experiment_settings import (
     BOWLNESS_RANGE,
 )
 from environment import Environment
-import itertools
 from terrain_generator import terrain_generator
 from environment_name import EnvironmentName
 
@@ -51,22 +50,25 @@ async def dbg_run_full_specialist() -> None:
 async def run_all_full_specialist_runs() -> None:
     bodies, dof_maps = make_bodies()
 
-    environments = [
-        Environment(
-            body,
-            dof_map,
-            terrain_generator(TERRAIN_SIZE, ruggedness, bowlness, TERRAIN_GRANULARITY),
-            EnvironmentName(body_i, ruggedness_i, bowlness_i),
-        )
-        for (body_i, (body, dof_map)), (ruggedness_i, ruggedness), (
-            bowlness_i,
-            bowlness,
-        ) in itertools.product(
-            enumerate(zip(bodies, dof_maps)),
-            enumerate(RUGGEDNESS_RANGE),
-            enumerate(BOWLNESS_RANGE),
-        )
-    ]
+    environments: List[Environment] = []
+
+    for ruggedness_i, ruggedness in enumerate(RUGGEDNESS_RANGE):
+        for bowlness_i, bowlness in enumerate(BOWLNESS_RANGE):
+            terrain = terrain_generator(
+                size=TERRAIN_SIZE,
+                ruggedness=ruggedness,
+                bowlness=bowlness,
+                granularity_multiplier=TERRAIN_GRANULARITY,
+            )
+            for body_i, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
+                environments.append(
+                    Environment(
+                        body,
+                        dof_map,
+                        terrain,
+                        EnvironmentName(body_i, ruggedness_i, bowlness_i),
+                    )
+                )
 
     seed = SEED_BASE
 

@@ -10,8 +10,8 @@ from experiment_settings import (
     TERRAIN_GRANULARITY,
 )
 from environment import Environment
-import itertools
 from environment_name import EnvironmentName
+from typing import List
 
 from terrain_generator import terrain_generator
 
@@ -41,7 +41,7 @@ async def run_all_full_generalist_runs() -> None:
         for i in range(NUM_RUNS):
             await run_full_generalist(
                 database_name=f"dbs/full_generalist_p{population_size}_cr{crossover_probability}_f{differential_weight}_run{i}",
-                headless=True,
+                headless=False,
                 rng_seed=seed,
                 population_size=population_size,
                 crossover_probability=crossover_probability,
@@ -60,22 +60,25 @@ async def run_full_generalist(
 ) -> None:
     bodies, dof_maps = make_bodies()
 
-    environments = [
-        Environment(
-            body,
-            dof_map,
-            terrain_generator(TERRAIN_SIZE, ruggedness, bowlness, TERRAIN_GRANULARITY),
-            EnvironmentName(body_i, ruggedness_i, bowlness_i),
-        )
-        for (body_i, (body, dof_map)), (ruggedness_i, ruggedness), (
-            bowlness_i,
-            bowlness,
-        ) in itertools.product(
-            enumerate(zip(bodies, dof_maps)),
-            enumerate(RUGGEDNESS_RANGE),
-            enumerate(BOWLNESS_RANGE),
-        )
-    ]
+    environments: List[Environment] = []
+
+    for ruggedness_i, ruggedness in enumerate(RUGGEDNESS_RANGE):
+        for bowlness_i, bowlness in enumerate(BOWLNESS_RANGE):
+            terrain = terrain_generator(
+                size=TERRAIN_SIZE,
+                ruggedness=ruggedness,
+                bowlness=bowlness,
+                granularity_multiplier=TERRAIN_GRANULARITY,
+            )
+            for body_i, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
+                environments.append(
+                    Environment(
+                        body,
+                        dof_map,
+                        terrain,
+                        EnvironmentName(body_i, ruggedness_i, bowlness_i),
+                    )
+                )
 
     await run_full_gen_spec(
         database_name=database_name,
