@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict
+from typing import List, Optional
 
 import numpy as np
 from revolve2.core.database import (
