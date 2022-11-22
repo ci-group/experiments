@@ -1,5 +1,7 @@
 import numpy as np
 
+NUM_CORES = 1
+
 # simulation settings
 SIMULATION_TIME = 30
 SAMPLING_FREQUENCY = 5
