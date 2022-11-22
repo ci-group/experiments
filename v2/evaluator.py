@@ -16,7 +16,12 @@ from revolve2.core.modular_robot import ModularRobot
 from pyrr import Vector3, Quaternion
 from typing import List
 import numpy as np
-from experiment_settings import SIMULATION_TIME, SAMPLING_FREQUENCY, CONTROL_FREQUENCY
+from experiment_settings import (
+    SIMULATION_TIME,
+    SAMPLING_FREQUENCY,
+    CONTROL_FREQUENCY,
+    ROBOT_INITIAL_Z_OFFSET,
+)
 from environment import Environment
 from revolve2.core.physics.environment_actor_controller import (
     EnvironmentActorController,
@@ -78,7 +83,9 @@ class Evaluator:
                         [
                             0.0,
                             0.0,
-                            bounding_box.size.z / 2.0 - bounding_box.offset.z,
+                            bounding_box.size.z / 2.0
+                            - bounding_box.offset.z
+                            + ROBOT_INITIAL_Z_OFFSET,
                         ]
                     ),
                     Quaternion(),

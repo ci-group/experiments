@@ -40,6 +40,7 @@ async def dbg_run_full_specialist() -> None:
                 BOWLNESS_RANGE[bowlness_num],
                 TERRAIN_GRANULARITY,
             ),
+            EnvironmentName(body_num, ruggedness_num, bowlness_num),
         ),
         population_size=100,
         crossover_probability=0.9,
