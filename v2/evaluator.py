@@ -21,7 +21,6 @@ from experiment_settings import (
     SAMPLING_FREQUENCY,
     CONTROL_FREQUENCY,
     ROBOT_INITIAL_Z_OFFSET,
-    NUM_CORES,
 )
 from environment import Environment
 from revolve2.core.physics.environment_actor_controller import (
@@ -42,10 +41,13 @@ class Evaluator:
     _runner: Runner
 
     def __init__(
-        self, cpg_network_structure: CpgNetworkStructure, headless: bool
+        self,
+        cpg_network_structure: CpgNetworkStructure,
+        headless: bool,
+        num_simulators: int,
     ) -> None:
         self._cpg_network_structure = cpg_network_structure
-        self._runner = LocalRunner(headless=headless, num_simulators=NUM_CORES)
+        self._runner = LocalRunner(headless=headless, num_simulators=num_simulators)
 
     async def evaluate(self, eval_descrs: List[EvaluationDescription]) -> List[float]:
         batch = Batch(

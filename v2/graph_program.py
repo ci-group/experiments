@@ -7,7 +7,10 @@ from typing import List, Optional
 
 from revolve2.core.database import (
     SerializableIncrementableStruct,
+    SerializableFrozenSingleton,
+    SerializableFrozenList,
 )
+from environment_name import EnvironmentName
 from revolve2.core.database.std import Rng
 from revolve2.core.optimization.ea.algorithms import bounce_parameters
 from revolve2.core.optimization.ea.population import (
@@ -22,6 +25,10 @@ from evaluator import Evaluator, EvaluationDescription
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
 from graph import Graph, Node
 from environment import Environment
+import logging
+from bodies import make_cpg_network_structure
+from revolve2.core.database import open_async_database_sqlite
+import numpy as np
 
 Genotype = Parameters
 
@@ -39,6 +46,14 @@ class Population(PopList[Genotype, Measures], table_name="population"):
     pass
 
 
+class EnvironmentNames(
+    SerializableFrozenList[EnvironmentName],
+    table_name="environment_names",
+    value_column_name="name",
+):
+    pass
+
+
 @dataclass
 class ProgramState(
     SerializableIncrementableStruct,
@@ -53,12 +68,18 @@ class ProgramState(
 
 
 @dataclass
+class ProgramRoot(SerializableFrozenSingleton, table_name="program_root"):
+    environment_names: EnvironmentNames
+    program_state: ProgramState
+
+
+@dataclass
 class Setting:
     environment: Environment
     genotype: Genotype
 
 
-class GraphOptimizer:
+class Program:
     """Program that optimizes the neural network parameters."""
 
     num_evaluations: int
@@ -74,61 +95,48 @@ class GraphOptimizer:
 
     async def run(
         self,
-        rng: Rng,
-        database: AsyncEngine,
+        database_name: str,
+        headless: bool,
+        rng_seed: int,
         environments: List[Environment],
         graph: Graph,
-        cpg_network_structure: CpgNetworkStructure,
-        headless: bool,
         num_evaluations: int,
         standard_deviation: float,
+        num_simulators: int,
     ) -> None:
         """Run the program."""
-        self.db = database
-        self.evaluator = Evaluator(cpg_network_structure, headless=headless)
-        self.environments = environments
-        self.graph = graph
+        logging.info("Program start.")
+
         self.num_evaluations = num_evaluations
         self.standard_deviation = standard_deviation
+        self.environments = environments
+        self.graph = graph
 
-        async with self.db.begin() as conn:
-            await ProgramState.prepare_db(conn)
+        cpg_network_structure = make_cpg_network_structure()
+        self.evaluator = Evaluator(
+            cpg_network_structure, headless=headless, num_simulators=num_simulators
+        )
 
-        if not await self.load_state():
-            initial_genotypes = [
-                Genotype(
-                    [
-                        float(v)
-                        for v in rng.rng.random(
-                            size=cpg_network_structure.num_connections
-                        )
-                    ]
-                )
-                for _ in range(len(self.graph.nodes))
-            ]
+        logging.info("Opening database..")
+        self.database = open_async_database_sqlite(database_name, create=True)
+        logging.info("Opening database done.")
 
-            eval_descrs = [
-                EvaluationDescription(env, genotype)
-                for env, genotype in zip(self.environments, initial_genotypes)
-            ]
-            all_measures = await self.measure(eval_descrs)
+        logging.info("Creating database structure..")
+        async with self.database.begin() as conn:
+            await ProgramRoot.prepare_db(conn)
+        logging.info("Creating database structure done.")
 
-            initial_population = [
-                Individual(genotype, measures)
-                for genotype, measures in zip(initial_genotypes, all_measures)
-            ]
-
-            initial_generation_index = 0
-            initial_performed_evaluations = len(eval_descrs)
-
-            self.state = ProgramState(
-                rng=rng,
-                population=initial_population,
-                generation_index=initial_generation_index,
-                performed_evaluations=initial_performed_evaluations,
+        logging.info("Trying to load program root from database..")
+        if await self.load_root():
+            logging.info("Root loaded successfully.")
+        else:
+            logging.info("Unable to load root. Initializing root..")
+            await self.init_root(
+                rng_seed=rng_seed,
+                cpg_network_structure=cpg_network_structure,
+                environments=environments,
             )
-
-            await self.save_state()
+            logging.info("Initializing state done.")
 
         while self.state.performed_evaluations < self.num_evaluations:
             await self.evolve()
@@ -136,23 +144,69 @@ class GraphOptimizer:
 
     async def save_state(self) -> None:
         """Save the state of the program."""
-        async with AsyncSession(self.db) as ses:
+        async with AsyncSession(self.database) as ses:
             async with ses.begin():
-                await self.state.to_db(ses)
+                await self.root.program_state.to_db(ses)
 
-    async def load_state(self) -> bool:
+    async def init_root(
+        self,
+        rng_seed: int,
+        cpg_network_structure: CpgNetworkStructure,
+        environments: List[Environment],
+    ) -> None:
+        initial_rng = Rng(np.random.Generator(np.random.PCG64(rng_seed)))
+
+        initial_genotypes = [
+            Genotype(
+                [
+                    float(v)
+                    for v in initial_rng.rng.random(
+                        size=cpg_network_structure.num_connections
+                    )
+                ]
+            )
+            for _ in range(len(self.graph.nodes))
+        ]
+
+        eval_descrs = [
+            EvaluationDescription(env, genotype)
+            for env, genotype in zip(self.environments, initial_genotypes)
+        ]
+        logging.info("Measuring initial population..")
+        all_measures = await self.measure(eval_descrs)
+        logging.info("Measuring initial population done.")
+
+        initial_population = [
+            Individual(genotype, measures)
+            for genotype, measures in zip(initial_genotypes, all_measures)
+        ]
+
+        logging.info("Saving root..")
+        state = ProgramState(
+            rng=initial_rng,
+            population=initial_population,
+            generation_index=0,
+            performed_evaluations=len(eval_descrs),
+        )
+        self.root = ProgramRoot(EnvironmentNames([e.name for e in environments]), state)
+        async with AsyncSession(self.database) as ses:
+            async with ses.begin():
+                await self.root.to_db(ses)
+        logging.info("Saving root done.")
+
+    async def load_root(self) -> bool:
         """
-        Load the state of the program.
+        Load the root of the program.
 
         :returns: True if could be loaded from database. False if no data available.
         """
-        async with AsyncSession(self.db) as ses:
+        async with AsyncSession(self.database) as ses:
             async with ses.begin():
-                maybe_state = await ProgramState.from_db_latest(ses, 1)
-                if maybe_state is None:
+                maybe_root = await ProgramRoot.from_db(ses, 1)
+                if maybe_root is None:
                     return False
                 else:
-                    self.state = maybe_state
+                    self.root = maybe_root
                     return True
 
     async def evolve(self) -> None:

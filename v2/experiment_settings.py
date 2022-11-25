@@ -1,7 +1,5 @@
 import numpy as np
 
-NUM_CORES = 1
-
 # simulation settings
 SIMULATION_TIME = 30
 SAMPLING_FREQUENCY = 5
@@ -17,7 +15,7 @@ DE_PARAMS = [
 ]  # population_size, crossover_probability, differential_weight
 
 # Graph settings
-GRAPH_PARAMS = (0.05,)  # standard deviation
+GRAPH_PARAMS = [(0.05,)]  # standard deviation
 
 # Terrain parameters
 TERRAIN_SIZE = (5.0, 5.0)
