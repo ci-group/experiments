@@ -84,6 +84,7 @@ class Program:
 
     num_evaluations: int
     standard_deviation: float
+    migration_probability: float
 
     environments: List[Environment]
     graph: Graph
@@ -102,6 +103,7 @@ class Program:
         graph: Graph,
         num_evaluations: int,
         standard_deviation: float,
+        migration_probability: float,
         num_simulators: int,
     ) -> None:
         """Run the program."""
@@ -109,6 +111,7 @@ class Program:
 
         self.num_evaluations = num_evaluations
         self.standard_deviation = standard_deviation
+        self.migration_probability = migration_probability
         self.environments = environments
         self.graph = graph
 
@@ -215,7 +218,11 @@ class Program:
 
         possible_new_genotypes = [
             self.get_new_genotype(
-                node, self.state.population, self.state.rng, self.standard_deviation
+                node,
+                self.state.population,
+                self.state.rng,
+                self.standard_deviation,
+                self.migration_probability,
             )
             for node in self.graph.nodes
         ]
@@ -247,19 +254,21 @@ class Program:
 
     @staticmethod
     def get_new_genotype(
-        node: Node, pop: Population, rng: Rng, standard_deviation: float
+        node: Node,
+        pop: Population,
+        rng: Rng,
+        standard_deviation: float,
+        migration_probability: float,
     ) -> Genotype:
-        choice = rng.rng.integers(0, 2)
-
-        if choice == 0:  # innovate
+        if rng.rng.random() < migration_probability:  # migrate
+            neighbours_index = rng.rng.integers(0, len(node.neighbours))
+            chosen_neighbour = node.neighbours[neighbours_index]
+            return pop[chosen_neighbour.index].genotype
+        else:  # innovate
             permutation = standard_deviation * rng.rng.standard_normal(
                 len(pop[node.index].genotype)
             )
             return bounce_parameters(Genotype(pop[node.index].genotype + permutation))
-        else:  # migrate
-            neighbours_index = rng.rng.integers(0, len(node.neighbours))
-            chosen_neighbour = node.neighbours[neighbours_index]
-            return pop[chosen_neighbour.index].genotype
 
     async def measure(self, eval_descrs: List[EvaluationDescription]) -> List[Measures]:
         """

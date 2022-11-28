@@ -19,6 +19,7 @@ import os
 from graph import Graph, Node
 import graph_program
 import logging
+from typed_argparse import Choices
 
 
 def de_generalist_database_name(
@@ -246,6 +247,7 @@ async def run_graph(
     SEED_BASE = 732091019
 
     standard_deviation = GRAPH_PARAMS[graph_params_i][0]
+    migration_probability = GRAPH_PARAMS[graph_params_i][1]
 
     graph, environments = make_graph()
 
@@ -263,34 +265,41 @@ async def run_graph(
             graph=graph,
             num_evaluations=NUM_EVALUATIONS,
             standard_deviation=standard_deviation,
+            migration_probability=migration_probability,
             num_simulators=num_simulators,
         )
 
 
 async def run_all(
-    runs: List[int], database_directory: str, num_simulators: int
+    experiments: List[str],
+    runs: List[int],
+    database_directory: str,
+    num_simulators: int,
 ) -> None:
     for run in runs:
         for de_params_i in range(len(DE_PARAMS)):
-            await run_de_generalist(
-                database_directory=database_directory,
-                runs=[run],
-                de_params_i=de_params_i,
-                num_simulators=num_simulators,
-            )
-            await run_de_specialist_all(
-                database_directory=database_directory,
-                runs=[run],
-                de_params_i=de_params_i,
-                num_simulators=num_simulators,
-            )
+            if len(experiments) == 0 or "de_generalist" in experiments:
+                await run_de_generalist(
+                    database_directory=database_directory,
+                    runs=[run],
+                    de_params_i=de_params_i,
+                    num_simulators=num_simulators,
+                )
+            if len(experiments) == 0 or "de_specialist" in experiments:
+                await run_de_specialist_all(
+                    database_directory=database_directory,
+                    runs=[run],
+                    de_params_i=de_params_i,
+                    num_simulators=num_simulators,
+                )
         for graph_params_i in range(len(GRAPH_PARAMS)):
-            await run_graph(
-                runs=[run],
-                database_directory=database_directory,
-                graph_params_i=graph_params_i,
-                num_simulators=num_simulators,
-            )
+            if len(experiments) == 0 or "graph" in experiments:
+                await run_graph(
+                    runs=[run],
+                    database_directory=database_directory,
+                    graph_params_i=graph_params_i,
+                    num_simulators=num_simulators,
+                )
 
 
 def parse_runs_arg(cliarg: str) -> None:
@@ -328,7 +337,13 @@ async def main() -> None:
     graph_parser = subparsers.add_parser("graph")
     graph_parser.add_argument("--graph_params_i", type=int, required=True)
 
-    subparsers.add_parser("all")
+    all_parser = subparsers.add_parser("all")
+    all_parser.add_argument(
+        "experiments",
+        choices=Choices("de_generalist", "de_specialist", "graph"),
+        default=[],
+        nargs="*",
+    )
 
     args = parser.parse_args()
     runs = parse_runs_arg(args.runs)
@@ -360,6 +375,7 @@ async def main() -> None:
             runs=runs,
             database_directory=args.database_directory,
             num_simulators=args.num_simulators,
+            experiments=args.experiments,
         )
     else:
         raise NotImplementedError()

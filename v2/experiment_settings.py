@@ -15,7 +15,7 @@ DE_PARAMS = [
 ]  # population_size, crossover_probability, differential_weight
 
 # Graph settings
-GRAPH_PARAMS = [(0.05,)]  # standard deviation
+GRAPH_PARAMS = [(0.05, 0.5), (0.05, 0.0)]  # standard deviation, migration_probability
 
 # Terrain parameters
 TERRAIN_SIZE = (5.0, 5.0)
