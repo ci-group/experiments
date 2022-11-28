@@ -141,7 +141,7 @@ class Program:
             )
             logging.info("Initializing state done.")
 
-        while self.state.performed_evaluations < self.num_evaluations:
+        while self.root.program_state.performed_evaluations < self.num_evaluations:
             await self.evolve()
             await self.save_state()
 
@@ -214,13 +214,13 @@ class Program:
 
     async def evolve(self) -> None:
         """Iterate one generation further."""
-        self.state.generation_index += 1
+        self.root.program_state.generation_index += 1
 
         possible_new_genotypes = [
             self.get_new_genotype(
                 node,
-                self.state.population,
-                self.state.rng,
+                self.root.program_state.population,
+                self.root.program_state.rng,
                 self.standard_deviation,
                 self.migration_probability,
             )
@@ -238,14 +238,16 @@ class Program:
                 for g, m in zip(possible_new_genotypes, await self.measure(eval_descrs))
             ]
         )
-        self.state.performed_evaluations += len(eval_descrs)
+        self.root.program_state.performed_evaluations += len(eval_descrs)
 
         original_selection, offspring_selection = replace_if_better(
-            self.state.population, possible_new_individuals, measure="fitness"
+            self.root.program_state.population,
+            possible_new_individuals,
+            measure="fitness",
         )
 
-        self.state.population = Population.from_existing_populations(  # type: ignore # TODO
-            [self.state.population, possible_new_individuals],
+        self.root.program_state.population = Population.from_existing_populations(  # type: ignore # TODO
+            [self.root.program_state.population, possible_new_individuals],
             [original_selection, offspring_selection],
             [
                 "fitness",
