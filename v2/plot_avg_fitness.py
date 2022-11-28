@@ -7,7 +7,6 @@ from sqlalchemy.future import select
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from experiment_settings import (
-    NUM_RUNS,
     NUM_EVALUATIONS,
     SIMULATION_TIME,
     DE_PARAMS,
@@ -22,6 +21,7 @@ import de_program
 import experiments
 import argparse
 import os
+import graph_program
 
 num_bodies = len(make_bodies()[0])
 
@@ -204,26 +204,31 @@ def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> 
         ).plot(ax=ax, color=plot_color)
 
 
-def plot_graph(ax: Axes) -> None:
+def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
     db_prefix = "dbs/graph"
 
-    for (standard_deviation), plot_color in zip(GRAPH_PARAMS, ["#dddd00"]):
+    for (standard_deviation,), plot_color in zip(GRAPH_PARAMS, ["#dddd00"]):
         fitnesses_per_run: List[pandas.DataFrame] = []
-        for run in range(NUM_RUNS):
-            db = open_database_sqlite(f"{db_prefix}_s{standard_deviation}_run{run}")
+        for run in runs:
+            db = open_database_sqlite(
+                os.path.join(
+                    database_directory,
+                    experiments.graph_database_name(run, standard_deviation),
+                )
+            )
             df = pandas.read_sql(
                 select(
-                    graph_optimizer.ProgramState.table,
-                    graph_optimizer.Population.item_table,
-                    graph_optimizer.Measures.table,
+                    graph_program.ProgramState.table,
+                    graph_program.Population.item_table,
+                    graph_program.Measures.table,
                 ).filter(
                     (
-                        graph_optimizer.ProgramState.table.population
-                        == graph_optimizer.Population.item_table.list_id
+                        graph_program.ProgramState.table.population
+                        == graph_program.Population.item_table.list_id
                     )
                     & (
-                        graph_optimizer.Population.item_table.measures
-                        == graph_optimizer.Measures.table.id
+                        graph_program.Population.item_table.measures
+                        == graph_program.Measures.table.id
                     )
                 ),
                 db,
@@ -262,7 +267,7 @@ runs = experiments.parse_runs_arg(args.runs)
 
 plot_full_generalist(ax=ax, database_directory=args.database_directory, runs=runs)
 plot_full_specialist(ax=ax, database_directory=args.database_directory, runs=runs)
-# plot_graph(ax=ax)
+plot_graph(ax=ax, database_directory=args.database_directory, runs=runs)
 ax.set_xlabel("Number of evaluations")
 ax.set_ylabel("Fitness (approx. cm/s)")
 plt.title("Graph optimization and baseline performance")
