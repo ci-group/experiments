@@ -6,25 +6,29 @@ import pandas
 from sqlalchemy.future import select
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-import de_multi_body_optimizer
-import graph_optimizer
 from experiment_settings import (
     NUM_RUNS,
     NUM_EVALUATIONS,
     SIMULATION_TIME,
     DE_PARAMS,
     GRAPH_PARAMS,
+    RUGGEDNESS_RANGE,
+    BOWLNESS_RANGE,
 )
 from bodies import make_bodies
 from typing import List
 import math
+import de_program
+import experiments
+import argparse
+import os
 
 num_bodies = len(make_bodies()[0])
 
 fig, ax = plt.subplots()
 
 
-def plot_full_generalist(ax: Axes) -> None:
+def plot_full_generalist(ax: Axes, database_directory: str, runs: List[int]) -> None:
     db_prefix = "dbs/full_generalist"
 
     for (
@@ -33,23 +37,28 @@ def plot_full_generalist(ax: Axes) -> None:
         differential_weight,
     ), plot_color in zip(DE_PARAMS, ["#0000ff", "#ff00aa"]):
         dfs_per_run: List[pandas.DataFrame] = []
-        for run in range(NUM_RUNS):
+        for run in runs:
             db = open_database_sqlite(
-                f"{db_prefix}_p{population_size}_cr{crossover_probability}_f{differential_weight}_run{run}"
+                os.path.join(
+                    database_directory,
+                    experiments.de_generalist_database_name(
+                        run, population_size, crossover_probability, differential_weight
+                    ),
+                )
             )
             df = pandas.read_sql(
                 select(
-                    de_multi_body_optimizer.ProgramState.table,
-                    de_multi_body_optimizer.Population.item_table,
-                    de_multi_body_optimizer.Measures.table,
+                    de_program.ProgramState.table,
+                    de_program.Population.item_table,
+                    de_program.Measures.table,
                 ).filter(
                     (
-                        de_multi_body_optimizer.ProgramState.table.population
-                        == de_multi_body_optimizer.Population.item_table.list_id
+                        de_program.ProgramState.table.population
+                        == de_program.Population.item_table.list_id
                     )
                     & (
-                        de_multi_body_optimizer.Population.item_table.measures
-                        == de_multi_body_optimizer.Measures.table.id
+                        de_program.Population.item_table.measures
+                        == de_program.Measures.table.id
                     )
                 ),
                 db,
@@ -96,7 +105,7 @@ def sqrtfitness(x):
     return average([math.sqrt(v) for v in x]) ** 2
 
 
-def plot_full_specialist(ax: Axes) -> None:
+def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> None:
     db_prefix = "dbs/full_specialist"
 
     for (
@@ -105,31 +114,47 @@ def plot_full_specialist(ax: Axes) -> None:
         differential_weight,
     ), plot_color in zip(DE_PARAMS, ["#ff0000", "#aaaa00"]):
         dfs_per_run_per_body: List[List[pandas.DataFrame]] = []
-        for run in range(NUM_RUNS):
+        for run in runs:
             dfs_per_body: List[pandas.DataFrame] = []
             for body_i in range(num_bodies):
-                db = open_database_sqlite(
-                    f"{db_prefix}_p{population_size}_cr{crossover_probability}_f{differential_weight}_body{body_i}_run{run}"
-                )
-                df = pandas.read_sql(
-                    select(
-                        de_multi_body_optimizer.ProgramState.table,
-                        de_multi_body_optimizer.Population.item_table,
-                        de_multi_body_optimizer.Measures.table,
-                    ).filter(
-                        (
-                            de_multi_body_optimizer.ProgramState.table.population
-                            == de_multi_body_optimizer.Population.item_table.list_id
+                for ruggedness_i, _ in enumerate(RUGGEDNESS_RANGE):
+                    for bowlness_i, _ in enumerate(BOWLNESS_RANGE):
+                        db = open_database_sqlite(
+                            os.path.join(
+                                database_directory,
+                                experiments.de_specialist_database_name(
+                                    run,
+                                    population_size,
+                                    crossover_probability,
+                                    differential_weight,
+                                    body_i,
+                                    ruggedness_i,
+                                    bowlness_i,
+                                ),
+                            )
                         )
-                        & (
-                            de_multi_body_optimizer.Population.item_table.measures
-                            == de_multi_body_optimizer.Measures.table.id
+                        db = open_database_sqlite(
+                            f"{db_prefix}_p{population_size}_cr{crossover_probability}_f{differential_weight}_body{body_i}_ruggedness{ruggedness_i}_bowlness{bowlness_i}_run{run}"
                         )
-                    ),
-                    db,
-                )
-                df["fitness"] = df["fitness"] / SIMULATION_TIME * 10
-                dfs_per_body.append(df[["generation_index", "fitness"]])
+                        df = pandas.read_sql(
+                            select(
+                                de_program.ProgramState.table,
+                                de_program.Population.item_table,
+                                de_program.Measures.table,
+                            ).filter(
+                                (
+                                    de_program.ProgramState.table.population
+                                    == de_program.Population.item_table.list_id
+                                )
+                                & (
+                                    de_program.Population.item_table.measures
+                                    == de_program.Measures.table.id
+                                )
+                            ),
+                            db,
+                        )
+                        df["fitness"] = df["fitness"] / SIMULATION_TIME * 10
+                        dfs_per_body.append(df[["generation_index", "fitness"]])
             dfs_per_run_per_body.append(dfs_per_body)
 
         fitness_per_run: List[pandas.DataFrame] = []
@@ -229,9 +254,15 @@ def plot_graph(ax: Axes) -> None:
         ).plot(ax=ax, color=plot_color)
 
 
-plot_full_generalist(ax=ax)
-plot_full_specialist(ax=ax)
-plot_graph(ax=ax)
+parser = argparse.ArgumentParser()
+parser.add_argument("-d", "--database_directory", type=str, required=True)
+parser.add_argument("-r", "--runs", type=str, required=True)
+args = parser.parse_args()
+runs = experiments.parse_runs_arg(args.runs)
+
+plot_full_generalist(ax=ax, database_directory=args.database_directory, runs=runs)
+plot_full_specialist(ax=ax, database_directory=args.database_directory, runs=runs)
+# plot_graph(ax=ax)
 ax.set_xlabel("Number of evaluations")
 ax.set_ylabel("Fitness (approx. cm/s)")
 plt.title("Graph optimization and baseline performance")
