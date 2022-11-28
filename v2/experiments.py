@@ -43,8 +43,10 @@ def de_specialist_database_name(
     return f"de_specialist_p{population_size}_cr{crossover_probability}_f{differential_weight}_body{body_i}_ruggedness{ruggedness_i}_bowlness{bowlness_i}_run{run}"
 
 
-def graph_database_name(run: int, standard_deviation: float) -> None:
-    return f"graph_s{standard_deviation}_run{run}"
+def graph_database_name(
+    run: int, standard_deviation: float, migration_probability: float
+) -> None:
+    return f"graph_s{standard_deviation}_mp{migration_probability}_run{run}"
 
 
 async def run_de_generalist(
@@ -257,7 +259,11 @@ async def run_graph(
         await graph_program.Program().run(
             database_name=os.path.join(
                 database_directory,
-                graph_database_name(run=run, standard_deviation=standard_deviation),
+                graph_database_name(
+                    run=run,
+                    standard_deviation=standard_deviation,
+                    migration_probability=migration_probability,
+                ),
             ),
             headless=True,
             rng_seed=SEED_BASE + run * len(GRAPH_PARAMS) + graph_params_i,
@@ -325,7 +331,7 @@ async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--database_directory", type=str, required=True)
     parser.add_argument("-r", "--runs", type=str, required=True)
-    subparsers = parser.add_subparsers(dest="experiment")
+    subparsers = parser.add_subparsers(dest="experiment", required=True)
     parser.add_argument("-s", "--num_simulators", type=int, required=True)
 
     de_generalist_parser = subparsers.add_parser("de_generalist")
