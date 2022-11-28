@@ -29,8 +29,6 @@ fig, ax = plt.subplots()
 
 
 def plot_full_generalist(ax: Axes, database_directory: str, runs: List[int]) -> None:
-    db_prefix = "dbs/full_generalist"
-
     for (
         population_size,
         crossover_probability,
@@ -96,7 +94,7 @@ def plot_full_generalist(ax: Axes, database_directory: str, runs: List[int]) -> 
         plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")
         describe[["mean"]].rename(
             columns={
-                "mean": f"Full generalist (p{population_size}_cr{crossover_probability}_f{differential_weight})"
+                "mean": f"Full generalist (p={population_size}, cr={crossover_probability}, f={differential_weight})"
             }
         ).plot(ax=ax, color=plot_color)
 
@@ -106,8 +104,6 @@ def sqrtfitness(x):
 
 
 def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> None:
-    db_prefix = "dbs/full_specialist"
-
     for (
         population_size,
         crossover_probability,
@@ -132,9 +128,6 @@ def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> 
                                     bowlness_i,
                                 ),
                             )
-                        )
-                        db = open_database_sqlite(
-                            f"{db_prefix}_p{population_size}_cr{crossover_probability}_f{differential_weight}_body{body_i}_ruggedness{ruggedness_i}_bowlness{bowlness_i}_run{run}"
                         )
                         df = pandas.read_sql(
                             select(
@@ -199,21 +192,23 @@ def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> 
         plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")
         describe[["mean"]].rename(
             columns={
-                "mean": f"Full specialist (p{population_size}_cr{crossover_probability}_f{differential_weight})"
+                "mean": f"Full specialist (p={population_size}, cr={crossover_probability}, f={differential_weight})"
             }
         ).plot(ax=ax, color=plot_color)
 
 
 def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
-    db_prefix = "dbs/graph"
-
-    for (standard_deviation,), plot_color in zip(GRAPH_PARAMS, ["#dddd00"]):
+    for (standard_deviation, migration_probability), plot_color in zip(
+        GRAPH_PARAMS, ["#dddd00"]
+    ):
         fitnesses_per_run: List[pandas.DataFrame] = []
         for run in runs:
             db = open_database_sqlite(
                 os.path.join(
                     database_directory,
-                    experiments.graph_database_name(run, standard_deviation),
+                    experiments.graph_database_name(
+                        run, standard_deviation, migration_probability
+                    ),
                 )
             )
             df = pandas.read_sql(
@@ -255,7 +250,9 @@ def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
             color=f"{plot_color}33",
         )
         describe[["mean"]].rename(
-            columns={"mean": f"Graph optimization (std{standard_deviation})"}
+            columns={
+                "mean": f"Graph optimization (std={standard_deviation}, mp={migration_probability})"
+            }
         ).plot(ax=ax, color=plot_color)
 
 
