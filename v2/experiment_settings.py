@@ -11,6 +11,7 @@ NUM_EVALUATIONS = 500000
 DE_PARAMS = [
     (100, 0.9, 0.8),
     (100, 0.9, 0.2),
+    (10, 0.9, 0.2),
 ]  # population_size, crossover_probability, differential_weight
 
 # Graph settings
