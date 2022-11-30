@@ -240,15 +240,15 @@ class Program:
         )
         self.root.program_state.performed_evaluations += len(eval_descrs)
 
-        original_selection, offspring_selection = replace_if_better(
+        pop_indices = replace_if_better(
             self.root.program_state.population,
             possible_new_individuals,
             measure="fitness",
         )
 
-        self.root.program_state.population = Population.from_existing_populations(  # type: ignore # TODO
+        self.root.program_state.population = Population.from_existing_equally_sized_populations(  # type: ignore # TODO
             [self.root.program_state.population, possible_new_individuals],
-            [original_selection, offspring_selection],
+            pop_indices,
             [
                 "fitness",
             ],
