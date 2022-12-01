@@ -2,7 +2,7 @@ import logging
 
 from revolve2.core.database import open_async_database_sqlite
 from revolve2.actor_controllers.cpg import CpgNetworkStructure
-from typing import List
+from typing import List, Optional
 from revolve2.core.database.std import Rng
 import numpy as np
 from environment import Environment
@@ -12,6 +12,7 @@ from revolve2.core.database import (
     SerializableIncrementableStruct,
     SerializableFrozenList,
     SerializableFrozenSingleton,
+    SerializableList,
 )
 from dataclasses import dataclass
 from revolve2.core.optimization.ea.population import (
@@ -19,7 +20,6 @@ from revolve2.core.optimization.ea.population import (
     Parameters,
     SerializableMeasures,
 )
-from typing import Optional
 from revolve2.core.optimization.ea.population.pop_list import PopList, replace_if_better
 from sqlalchemy.ext.asyncio import AsyncEngine
 from bodies import make_cpg_network_structure
@@ -29,11 +29,18 @@ from evaluator import Evaluator, EvaluationDescription
 Genotype = Parameters
 
 
+class Fitnesses(
+    SerializableList[float], table_name="fitnesses", value_column_name="fitness"
+):
+    """Fitnesses per environment."""
+
+
 @dataclass
 class Measures(SerializableMeasures, table_name="measures"):
     """Measures of a genotype/phenotype."""
 
-    fitness: Optional[float] = None
+    fitnesses: Optional[Fitnesses] = None
+    combined_fitness: Optional[float] = None
 
 
 class Population(PopList[Genotype, Measures], table_name="population"):
@@ -217,12 +224,14 @@ class Program:
                 evalsets.append(EvaluationDescription(environment, individual.genotype))
 
         fitnesses = np.array(await self.evaluator.evaluate(evalsets))
+        fitnesses.resize(len(population), len(self.environments))
+        combined_fitnesses = np.square(np.average(np.sqrt(fitnesses), axis=1))
 
-        fitnesses.resize(len(self.environments), len(population))
-        combined_fitnesses = np.average(np.sqrt(fitnesses), axis=0) ** 2
-
-        for individual, fitness in zip(population, combined_fitnesses):
-            individual.measures.fitness = float(fitness)
+        for individual, seperate_fitnesses, combined_fitness in zip(
+            population, fitnesses, combined_fitnesses
+        ):
+            individual.measures.fitnesses = Fitnesses(seperate_fitnesses)
+            individual.measures.combined_fitness = float(combined_fitness)
 
     async def evolve(self) -> None:
         """Iterate one generation further."""
@@ -243,13 +252,11 @@ class Program:
         await self.measure(offspring)
 
         pop_indices = replace_if_better(
-            self.root.program_state.population, offspring, measure="fitness"
+            self.root.program_state.population, offspring, measure="combined_fitness"
         )
 
         self.root.program_state.population = Population.from_existing_equally_sized_populations(  # type: ignore # TODO
             [self.root.program_state.population, offspring],
             pop_indices,
-            [
-                "fitness",
-            ],
+            ["combined_fitness", "fitnesses"],
         )
