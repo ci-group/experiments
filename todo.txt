@@ -1,12 +1,17 @@
-- different terrains
-    - contact buffer full
-    - robot position
-- measure & plot all brains in all envs
-- cache graph fitness
-- simulated annealing
-- force generalists for graph optimizer
+- Save individual fitnesses
+- Cache graph fitnesses
+- Recording
+- Graph: source of genotype. migration or innovation?
+- Generalizability plot (measure & plot all brains in all envs)
+- Reality gap
+- Evolvability
 
-...
+Maybe?
+- Different controller(feed forward nn)
+- Simulated annealing
+- Force generalist for graph optimizer
 
-- evolvability
-- reality gap
+
+
+save parents
+cleanup creating new population from existing populations
