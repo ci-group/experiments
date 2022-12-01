@@ -431,101 +431,27 @@ async def main() -> None:
 
             fitness_i = 0
             for case in cases:
-                for opt_param_i, (_, opt_fitness) in enumerate(
+                for opt_param_i, (params, opt_fitness) in enumerate(
                     case.de_specialist_params_and_fitnesses
                 ):
-                    # if abs(opt_fitness - fitnesses[fitness_i]) != 0.0:
-                    print(
-                        f"Fitness differs by {abs(opt_fitness - fitnesses[fitness_i])} for run {run} de specialist (param {opt_param_i}) body {case.body_i} ruggedness {case.ruggedness_i} bowlness {case.bowlness_i}"
-                    )
+                    if abs(opt_fitness - fitnesses[fitness_i]) != 0.0:
+                        print(
+                            f"Fitness differs by {abs(opt_fitness - fitnesses[fitness_i])} gsum {sum(params)} for run {run} de specialist (param {opt_param_i}) body {case.body_i} ruggedness {case.ruggedness_i} bowlness {case.bowlness_i}"
+                        )
                     fitness_i += 1
-                for opt_param_i, (_, opt_fitness) in enumerate(
+                for opt_param_i, (params, opt_fitness) in enumerate(
                     case.graph_params_and_fitnesses
                 ):
-                    # if abs(opt_fitness - fitnesses[fitness_i]) != 0.0:
-                    print(
-                        f"Fitness differs by {abs(opt_fitness - fitnesses[fitness_i])} for run {run} graph (param {opt_param_i}) body {case.body_i} ruggedness {case.ruggedness_i} bowlness {case.bowlness_i}"
-                    )
+                    if abs(opt_fitness - fitnesses[fitness_i]) != 0.0:
+                        print(
+                            f"Fitness differs by {abs(opt_fitness - fitnesses[fitness_i])} gsum {sum(params)} for run {run} graph (param {opt_param_i}) body {case.body_i} ruggedness {case.ruggedness_i} bowlness {case.bowlness_i}"
+                        )
                     fitness_i += 1
 
             print("Done.")
 
     else:
         raise NotImplementedError()
-
-    # subparsers = parser.add_subparsers(dest="command", required=True)
-
-    # show_parser = subparsers.add_parser("show")
-    # add_experiment_parsers(show_parser)
-
-    # record_parser = subparsers.add_parser("record")
-    # add_experiment_parsers(record_parser)
-
-    # args = parser.parse_args()
-
-    # if args.command == "show":
-    #     pass
-    # elif args.command == "record":
-    #     raise NotImplementedError()  # TODO
-    # else:
-    #     raise NotImplementedError()
-
-    # if args.experiment == "de_generalist":
-    #     params = await load_best_de_generalist(
-    #         args.database_directory, args.run, args.de_params_i
-    #     )
-    # elif args.experiment == "de_specialist":
-    #     params = await load_best_de_specialist(
-    #         args.database_directory,
-    #         args.run,
-    #         args.de_params_i,
-    #         args.opt_body_i,
-    #         args.opt_ruggedness_i,
-    #         args.opt_bowlness_i,
-    #     )
-    # elif args.experiment == "graph":
-    #     params = await load_best_graph(
-    #         args.database_directory,
-    #         args.run,
-    #         args.graph_params_i,
-    #         args.opt_body_i,
-    #         args.opt_ruggedness_i,
-    #         args.opt_bowlness_i,
-    #     )
-    # else:
-    #     raise NotImplementedError()
-
-    # cpg_network_structure = make_cpg_network_structure()
-
-    # evaluator = Evaluator(cpg_network_structure, headless=False, num_simulators=1)
-
-    # bodies, dof_maps = make_bodies()
-    # terrain = terrain_generator(
-    #     size=TERRAIN_SIZE,
-    #     ruggedness=RUGGEDNESS_RANGE[args.ruggedness_i],
-    #     bowlness=BOWLNESS_RANGE[args.bowlness_i],
-    #     granularity_multiplier=TERRAIN_GRANULARITY,
-    # )
-
-    # evaldescr = EvaluationDescription(
-    #     Environment(
-    #         bodies[args.body_i],
-    #         dof_maps[args.body_i],
-    #         terrain,
-    #         name=EnvironmentName(
-    #             args.opt_body_i,
-    #             args.opt_ruggedness_i,
-    #             args.opt_bowlness_i,
-    #         ),
-    #     ),
-    #     params,
-    # )
-
-    # fitness = (await evaluator.evaluate([evaldescr]))[0]
-    # print(f"Evaluated fitness: {fitness}")
-    # print(
-    #     "For de specialist and graph, the above two fitnesses should be almost equal."
-    # )
 
 
 if __name__ == "__main__":
