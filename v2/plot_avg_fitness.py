@@ -33,7 +33,7 @@ def plot_full_generalist(ax: Axes, database_directory: str, runs: List[int]) -> 
         population_size,
         crossover_probability,
         differential_weight,
-    ), plot_color in zip(DE_PARAMS, ["#0000ff", "#ff00aa"]):
+    ), plot_color in zip(DE_PARAMS, ["#0000ff", "#ff00aa", "#aaaaff"]):
         dfs_per_run: List[pandas.DataFrame] = []
         for run in runs:
             db = open_database_sqlite(
@@ -199,7 +199,7 @@ def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> 
 
 def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
     for (standard_deviation, migration_probability), plot_color in zip(
-        GRAPH_PARAMS, ["#dddd00"]
+        GRAPH_PARAMS, ["#dddd00", "#aaddaa"]
     ):
         fitnesses_per_run: List[pandas.DataFrame] = []
         for run in runs:
