@@ -1,5 +1,3 @@
-- Save individual fitnesses
-- Cache graph fitnesses
 - Recording
 - Graph: source of genotype. migration or innovation?
 - Generalizability plot (measure & plot all brains in all envs)
