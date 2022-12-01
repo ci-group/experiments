@@ -9,6 +9,8 @@ from revolve2.core.database import (
     SerializableIncrementableStruct,
     SerializableFrozenSingleton,
     SerializableFrozenList,
+    SerializableStruct,
+    SerializableList,
 )
 from environment_name import EnvironmentName
 from revolve2.core.database.std import Rng
@@ -33,6 +35,20 @@ import numpy as np
 Genotype = Parameters
 
 
+class VisitedEnvironments(
+    SerializableList[int],
+    table_name="visited_environments",
+    value_column_name="environment",
+):
+    pass
+
+
+@dataclass
+class GenotypeWithMeta(SerializableStruct, table_name="genotype_with_meta"):
+    genotype: Genotype
+    visited_environments: VisitedEnvironments
+
+
 @dataclass
 class Measures(SerializableMeasures, table_name="measures"):
     """Measures of a genotype/phenotype."""
@@ -40,7 +56,7 @@ class Measures(SerializableMeasures, table_name="measures"):
     fitness: Optional[float] = None
 
 
-class Population(PopList[Genotype, Measures], table_name="population"):
+class Population(PopList[GenotypeWithMeta, Measures], table_name="population"):
     """A population of individuals consisting of the above Genotype and Measures."""
 
     pass
@@ -160,19 +176,22 @@ class Program:
         initial_rng = Rng(np.random.Generator(np.random.PCG64(rng_seed)))
 
         initial_genotypes = [
-            Genotype(
-                [
-                    float(v)
-                    for v in initial_rng.rng.random(
-                        size=cpg_network_structure.num_connections
-                    )
-                ]
+            GenotypeWithMeta(
+                Genotype(
+                    [
+                        float(v)
+                        for v in initial_rng.rng.random(
+                            size=cpg_network_structure.num_connections
+                        )
+                    ]
+                ),
+                VisitedEnvironments([env_i]),
             )
-            for _ in range(len(self.graph.nodes))
+            for env_i in range(len(self.graph.nodes))
         ]
 
         eval_descrs = [
-            EvaluationDescription(env, genotype)
+            EvaluationDescription(env, genotype.genotype)
             for env, genotype in zip(self.environments, initial_genotypes)
         ]
         logging.info("Measuring initial population..")
@@ -228,26 +247,38 @@ class Program:
         ]
 
         eval_descrs = [
-            EvaluationDescription(env, genotype)
+            EvaluationDescription(env, genotype.genotype)
             for env, genotype in zip(self.environments, possible_new_genotypes)
+            if genotype is not None
         ]
 
-        possible_new_individuals = Population(
-            [
-                Individual(g, m)
-                for g, m in zip(possible_new_genotypes, await self.measure(eval_descrs))
-            ]
-        )
+        measurements = await self.measure(eval_descrs)
+
+        possible_new_individuals: List[Individual[GenotypeWithMeta, Measures]] = []
+        measurements_index = 0
+        for orig_genotype, new_genotype in zip(
+            self.root.program_state.population, possible_new_genotypes
+        ):
+            if new_genotype is None:
+                possible_new_individuals.append(orig_genotype)
+            else:
+                possible_new_individuals.append(
+                    Individual(new_genotype, measurements[measurements_index])
+                )
+                measurements_index += 1
+
         self.root.program_state.performed_evaluations += len(eval_descrs)
+
+        offspring = Population(possible_new_individuals)
 
         pop_indices = replace_if_better(
             self.root.program_state.population,
-            possible_new_individuals,
+            offspring,
             measure="fitness",
         )
 
         self.root.program_state.population = Population.from_existing_equally_sized_populations(  # type: ignore # TODO
-            [self.root.program_state.population, possible_new_individuals],
+            [self.root.program_state.population, offspring],
             pop_indices,
             [
                 "fitness",
@@ -261,16 +292,28 @@ class Program:
         rng: Rng,
         standard_deviation: float,
         migration_probability: float,
-    ) -> Genotype:
+    ) -> Optional[GenotypeWithMeta]:
         if rng.rng.random() < migration_probability:  # migrate
             neighbours_index = rng.rng.integers(0, len(node.neighbours))
             chosen_neighbour = node.neighbours[neighbours_index]
-            return pop[chosen_neighbour.index].genotype
+            chosen_genotype = pop[chosen_neighbour.index].genotype
+            if node.index in chosen_genotype.visited_environments:
+                return None
+            else:
+                chosen_genotype.visited_environments.append(node.index)
+                return chosen_genotype
         else:  # innovate
             permutation = standard_deviation * rng.rng.standard_normal(
-                len(pop[node.index].genotype)
+                len(pop[node.index].genotype.genotype)
             )
-            return bounce_parameters(Genotype(pop[node.index].genotype + permutation))
+            new_genotype = GenotypeWithMeta(
+                bounce_parameters(
+                    Genotype(pop[node.index].genotype.genotype + permutation)
+                ),
+                VisitedEnvironments([]),
+            )
+            new_genotype.visited_environments.append(node.index)
+            return new_genotype
 
     async def measure(self, eval_descrs: List[EvaluationDescription]) -> List[Measures]:
         """
