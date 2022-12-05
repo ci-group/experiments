@@ -1,6 +1,6 @@
-- Recording
-- Graph: source of genotype. migration or innovation?
+- graph gif over time
 - Generalizability plot (measure & plot all brains in all envs)
+- Graph: source of genotype. migration or innovation?
 - Reality gap
 - Evolvability
 
