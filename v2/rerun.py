@@ -26,6 +26,7 @@ from environment_name import EnvironmentName
 from typing import List, Tuple
 from typed_argparse import Choices
 from revolve2.core.physics import Terrain
+from revolve2.core.physics.running import RecordSettings
 
 
 def add_experiment_parsers(parent_parser: argparse.ArgumentParser):
@@ -135,14 +136,14 @@ async def load_best_de_specialist(
         db,
     )
     lastgen = df[df.generation_index == df.generation_index.max()]
-    bestrow = lastgen[lastgen.fitness == lastgen.fitness.max()]
+    bestrow = lastgen[lastgen.combined_fitness == lastgen.combined_fitness.max()]
     best_params_id = int(bestrow.genotype)
 
     db2 = open_async_database_sqlite(database_name)
     async with AsyncSession(db2) as session:
         best_params = await de_program.Genotype.from_db(session, best_params_id)
 
-    return best_params, float(bestrow.fitness)
+    return best_params, float(bestrow.combined_fitness)
 
 
 async def load_best_graph(
@@ -243,6 +244,7 @@ async def main() -> None:
     show_parser.add_argument("--env_body", type=int, required=True)
     show_parser.add_argument("--env_ruggedness", type=int, required=True)
     show_parser.add_argument("--env_bowlness", type=int, required=True)
+    show_parser.add_argument("--record", type=str, required=False)
     show_subparsers = show_parser.add_subparsers(dest="experiment", required=True)
     show_de_generalist = show_subparsers.add_parser("de_generalist")
     show_de_generalist.add_argument("--opt_params", type=int, required=True)
@@ -320,7 +322,14 @@ async def main() -> None:
             params,
         )
 
-        fitness = (await evaluator.evaluate([evaldescr]))[0]
+        if args.record:
+            record_settings = RecordSettings(args.record, fps=60)
+        else:
+            record_settings = None
+
+        fitness = (
+            await evaluator.evaluate([evaldescr], record_settings=record_settings)
+        )[0]
         print(f"Fitness during optimization: {opt_fitness}")
         print(f"Rerun fitness: {fitness}")
         print(f"Difference: {abs(opt_fitness - fitness)}")

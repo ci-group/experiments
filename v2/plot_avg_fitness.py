@@ -61,8 +61,8 @@ def plot_full_generalist(ax: Axes, database_directory: str, runs: List[int]) -> 
                 ),
                 db,
             )
-            df["fitness"] = df["fitness"] / SIMULATION_TIME * 10
-            dfs_per_run.append(df[["generation_index", "fitness"]])
+            df["combined_fitness"] = df["combined_fitness"] / SIMULATION_TIME * 10
+            dfs_per_run.append(df[["generation_index", "combined_fitness"]])
 
         max_per_run = []
         for df in dfs_per_run:
@@ -86,9 +86,9 @@ def plot_full_generalist(ax: Axes, database_directory: str, runs: List[int]) -> 
             left_on="generation_index",
             right_on="generation_index",
             how="left",
-        )[["evaluation", "fitness"]]
+        )[["evaluation", "combined_fitness"]]
 
-        describe = with_evals.groupby(by="evaluation").describe()["fitness"]
+        describe = with_evals.groupby(by="evaluation").describe()["combined_fitness"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
         plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")
@@ -146,8 +146,12 @@ def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> 
                             ),
                             db,
                         )
-                        df["fitness"] = df["fitness"] / SIMULATION_TIME * 10
-                        dfs_per_body.append(df[["generation_index", "fitness"]])
+                        df["combined_fitness"] = (
+                            df["combined_fitness"] / SIMULATION_TIME * 10
+                        )
+                        dfs_per_body.append(
+                            df[["generation_index", "combined_fitness"]]
+                        )
             dfs_per_run_per_body.append(dfs_per_body)
 
         fitness_per_run: List[pandas.DataFrame] = []
@@ -160,7 +164,7 @@ def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> 
             combined_body_fitnesses = (
                 pandas.concat(body_maxes)
                 .groupby(by="generation_index")
-                .agg({"fitness": sqrtfitness})
+                .agg({"combined_fitness": sqrtfitness})
             )
             fitness_per_run.append(combined_body_fitnesses.reset_index())
         fitnesses_per_run_concat = pandas.concat(fitness_per_run)
@@ -184,9 +188,9 @@ def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> 
             left_on="generation_index",
             right_on="generation_index",
             how="left",
-        )[["evaluation", "fitness"]]
+        )[["evaluation", "combined_fitness"]]
 
-        describe = with_evals.groupby(by="evaluation").describe()["fitness"]
+        describe = with_evals.groupby(by="evaluation").describe()["combined_fitness"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
         plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")

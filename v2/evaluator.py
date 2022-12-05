@@ -14,7 +14,7 @@ from revolve2.core.modular_robot.brains import BrainCpgNetworkStatic
 from dof_map_brain import DofMapBrain
 from revolve2.core.modular_robot import ModularRobot
 from pyrr import Vector3, Quaternion
-from typing import List
+from typing import List, Optional
 import numpy as np
 from experiment_settings import (
     SIMULATION_TIME,
@@ -27,6 +27,7 @@ from revolve2.core.physics.environment_actor_controller import (
     EnvironmentActorController,
 )
 from revolve2.core.optimization.ea.population import Parameters
+from revolve2.core.physics.running import RecordSettings
 
 
 @dataclass
@@ -49,7 +50,11 @@ class Evaluator:
         self._cpg_network_structure = cpg_network_structure
         self._runner = LocalRunner(headless=headless, num_simulators=num_simulators)
 
-    async def evaluate(self, eval_descrs: List[EvaluationDescription]) -> List[float]:
+    async def evaluate(
+        self,
+        eval_descrs: List[EvaluationDescription],
+        record_settings: Optional[RecordSettings] = None,
+    ) -> List[float]:
         batch = Batch(
             simulation_time=SIMULATION_TIME,
             sampling_frequency=SAMPLING_FREQUENCY,
@@ -98,7 +103,9 @@ class Evaluator:
             env.static_geometries.extend(eval_descr.environment.terrain.static_geometry)
             batch.environments.append(env)
 
-        batch_results = await self._runner.run_batch(batch)
+        batch_results = await self._runner.run_batch(
+            batch, record_settings=record_settings
+        )
 
         fitnesses = [
             self._calculate_fitness(
