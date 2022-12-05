@@ -27,6 +27,7 @@ from typing import List, Tuple
 from typed_argparse import Choices
 from revolve2.core.physics import Terrain
 from revolve2.core.physics.running import RecordSettings
+import logging
 
 
 def add_experiment_parsers(parent_parser: argparse.ArgumentParser):
@@ -192,13 +193,18 @@ async def load_best_graph(
         & (df.ruggedness_num == ruggedness_i)
         & (df.bowlness_num == bowlness_i)
     ]
+    assert (len(lastgen)) == 1, "cannot find best individual for these parameters"
     best_params_id = int(lastgen.genotype)
 
     db2 = open_async_database_sqlite(database_name)
     async with AsyncSession(db2) as session:
-        best_params = await graph_program.Genotype.from_db(session, best_params_id)
+        best_genotype = await graph_program.GenotypeWithMeta.from_db(
+            session, best_params_id
+        )
 
-    return best_params, float(lastgen.fitness)
+    assert best_genotype is not None
+
+    return best_genotype.genotype, float(lastgen.fitness)
 
 
 def argparse_range_type(cliarg: str) -> List[int]:
@@ -234,6 +240,11 @@ def add_args(parser: argparse.ArgumentParser) -> None:
 
 
 async def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s",
+    )
+
     parser = argparse.ArgumentParser()
 
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -400,8 +411,6 @@ async def main() -> None:
                                 graph_params_and_fitnesses,
                             )
                         )
-                        break
-                    break
 
             evaldescrs: List[EvaluationDescription] = []
 
