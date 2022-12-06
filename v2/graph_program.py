@@ -157,9 +157,21 @@ class Program:
             )
             logging.info("Initializing state done.")
 
+        logging.info(
+            f"Entering optimization loop. Continuing until around {self.num_evaluations} evaluations."
+        )
         while self.root.program_state.performed_evaluations < self.num_evaluations:
+            logging.info(
+                f"Current # evaluations: {self.root.program_state.performed_evaluations}"
+            )
+            logging.info("Evolving..")
             await self.evolve()
+            logging.info("Evolving done.")
+
+            logging.info("Saving state..")
             await self.save_state()
+            logging.info("Saving state done.")
+        logging.info("Optimization loop done. Exiting program.")
 
     async def save_state(self) -> None:
         """Save the state of the program."""
