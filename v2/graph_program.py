@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from tkinter import E
 from typing import List, Optional
 
 from revolve2.core.database import (
@@ -50,13 +51,19 @@ class GenotypeWithMeta(SerializableStruct, table_name="genotype_with_meta"):
 
 
 @dataclass
+class GenotypeWithHeritage(SerializableStruct, table_name="genotype_with_heritage"):
+    genotype: GenotypeWithMeta
+    came_from: int
+
+
+@dataclass
 class Measures(SerializableMeasures, table_name="measures"):
     """Measures of a genotype/phenotype."""
 
     fitness: Optional[float] = None
 
 
-class Population(PopList[GenotypeWithMeta, Measures], table_name="population"):
+class Population(PopList[GenotypeWithHeritage, Measures], table_name="population"):
     """A population of individuals consisting of the above Genotype and Measures."""
 
     pass
@@ -188,22 +195,25 @@ class Program:
         initial_rng = Rng(np.random.Generator(np.random.PCG64(rng_seed)))
 
         initial_genotypes = [
-            GenotypeWithMeta(
-                Genotype(
-                    [
-                        float(v)
-                        for v in initial_rng.rng.random(
-                            size=cpg_network_structure.num_connections
-                        )
-                    ]
+            GenotypeWithHeritage(
+                genotype=GenotypeWithMeta(
+                    Genotype(
+                        [
+                            float(v)
+                            for v in initial_rng.rng.random(
+                                size=cpg_network_structure.num_connections
+                            )
+                        ]
+                    ),
+                    VisitedEnvironments([env_i]),
                 ),
-                VisitedEnvironments([env_i]),
+                came_from=env_i,
             )
             for env_i in range(len(self.graph.nodes))
         ]
 
         eval_descrs = [
-            EvaluationDescription(env, genotype.genotype)
+            EvaluationDescription(env, genotype.genotype.genotype)
             for env, genotype in zip(self.environments, initial_genotypes)
         ]
         logging.info("Measuring initial population..")
@@ -259,14 +269,14 @@ class Program:
         ]
 
         eval_descrs = [
-            EvaluationDescription(env, genotype.genotype)
+            EvaluationDescription(env, genotype.genotype.genotype)
             for env, genotype in zip(self.environments, possible_new_genotypes)
             if genotype is not None
         ]
 
         measurements = await self.measure(eval_descrs)
 
-        possible_new_individuals: List[Individual[GenotypeWithMeta, Measures]] = []
+        possible_new_individuals: List[Individual[GenotypeWithHeritage, Measures]] = []
         measurements_index = 0
         for orig_genotype, new_genotype in zip(
             self.root.program_state.population, possible_new_genotypes
@@ -304,27 +314,34 @@ class Program:
         rng: Rng,
         standard_deviation: float,
         migration_probability: float,
-    ) -> Optional[GenotypeWithMeta]:
+    ) -> Optional[GenotypeWithHeritage]:
         if rng.rng.random() < migration_probability:  # migrate
             neighbours_index = rng.rng.integers(0, len(node.neighbours))
             chosen_neighbour = node.neighbours[neighbours_index]
             chosen_genotype = pop[chosen_neighbour.index].genotype
-            if node.index in chosen_genotype.visited_environments:
+            if node.index in chosen_genotype.genotype.visited_environments:
                 return None
             else:
-                chosen_genotype.visited_environments.append(node.index)
-                return chosen_genotype
+                chosen_genotype.genotype.visited_environments.append(node.index)
+                return GenotypeWithHeritage(
+                    genotype=chosen_genotype.genotype, came_from=chosen_neighbour.index
+                )
         else:  # innovate
             permutation = standard_deviation * rng.rng.standard_normal(
-                len(pop[node.index].genotype.genotype)
+                len(pop[node.index].genotype.genotype.genotype)
             )
-            new_genotype = GenotypeWithMeta(
-                bounce_parameters(
-                    Genotype(pop[node.index].genotype.genotype + permutation)
+            new_genotype = GenotypeWithHeritage(
+                genotype=GenotypeWithMeta(
+                    bounce_parameters(
+                        Genotype(
+                            pop[node.index].genotype.genotype.genotype + permutation
+                        )
+                    ),
+                    VisitedEnvironments([]),
                 ),
-                VisitedEnvironments([]),
+                came_from=node.index,
             )
-            new_genotype.visited_environments.append(node.index)
+            new_genotype.genotype.visited_environments.append(node.index)
             return new_genotype
 
     async def measure(self, eval_descrs: List[EvaluationDescription]) -> List[Measures]:

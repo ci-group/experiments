@@ -108,7 +108,7 @@ def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> 
         population_size,
         crossover_probability,
         differential_weight,
-    ), plot_color in zip(DE_PARAMS, ["#ff0000", "#aaaa00"]):
+    ), plot_color in zip(DE_PARAMS, ["#ff0000", "#aaaa00", "#ee4466"]):
         dfs_per_run_per_body: List[List[pandas.DataFrame]] = []
         for run in runs:
             dfs_per_body: List[pandas.DataFrame] = []
