@@ -44,9 +44,15 @@ def de_specialist_database_name(
 
 
 def graph_database_name(
-    run: int, standard_deviation: float, migration_probability: float
+    run: int,
+    standard_deviation: float,
+    migration_probability: float,
+    alpha1: float,
+    alpha2: float,
+    theta1: float,
+    theta2: float,
 ) -> None:
-    return f"graph_s{standard_deviation}_mp{migration_probability}_run{run}"
+    return f"graph_s{standard_deviation}_mp{migration_probability}_a1{alpha1}_a2{alpha2}_t1{theta1}_t2{theta2}_run{run}"
 
 
 async def run_de_generalist(
@@ -267,6 +273,10 @@ async def run_graph(
                     run=run,
                     standard_deviation=standard_deviation,
                     migration_probability=migration_probability,
+                    alpha1=alpha1,
+                    alpha2=alpha2,
+                    theta1=theta1,
+                    theta2=theta2,
                 ),
             ),
             headless=True,
