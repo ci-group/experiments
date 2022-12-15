@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from tkinter import E
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from revolve2.core.database import (
     SerializableIncrementableStruct,
@@ -21,7 +20,7 @@ from revolve2.core.optimization.ea.population import (
     Parameters,
     SerializableMeasures,
 )
-from revolve2.core.optimization.ea.population.pop_list import PopList, replace_if_better
+from revolve2.core.optimization.ea.population.pop_list import PopList, replace_if
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from evaluator import Evaluator, EvaluationDescription
@@ -32,6 +31,8 @@ import logging
 from bodies import make_cpg_network_structure
 from revolve2.core.database import open_async_database_sqlite
 import numpy as np
+import enum
+import math
 
 Genotype = Parameters
 
@@ -50,10 +51,9 @@ class GenotypeWithMeta(SerializableStruct, table_name="genotype_with_meta"):
     visited_environments: VisitedEnvironments
 
 
-@dataclass
-class GenotypeWithHeritage(SerializableStruct, table_name="genotype_with_heritage"):
-    genotype: GenotypeWithMeta
-    came_from: int
+class GenotypeSource(enum.Enum):
+    INNOVATE = "innovate"
+    MIGRATE = "migrate"
 
 
 @dataclass
@@ -61,9 +61,15 @@ class Measures(SerializableMeasures, table_name="measures"):
     """Measures of a genotype/phenotype."""
 
     fitness: Optional[float] = None
+    source: Optional[str] = None
+    num_neighbours: Optional[int] = None
+    new_cluster_size: Optional[int] = None
+    orig_cluster_size: Optional[int] = None
+    new_cluster_ratio: Optional[float] = None
+    orig_cluster_ratio: Optional[float] = None
 
 
-class Population(PopList[GenotypeWithHeritage, Measures], table_name="population"):
+class Population(PopList[GenotypeWithMeta, Measures], table_name="population"):
     """A population of individuals consisting of the above Genotype and Measures."""
 
     pass
@@ -108,6 +114,10 @@ class Program:
     num_evaluations: int
     standard_deviation: float
     migration_probability: float
+    theta1: float
+    theta2: float
+    alpha1: float
+    alpha2: float
 
     environments: List[Environment]
     graph: Graph
@@ -115,7 +125,7 @@ class Program:
     db: AsyncEngine
     evaluator: Evaluator
 
-    state: ProgramState
+    root: ProgramRoot
 
     async def run(
         self,
@@ -127,6 +137,10 @@ class Program:
         num_evaluations: int,
         standard_deviation: float,
         migration_probability: float,
+        theta1: float,
+        theta2: float,
+        alpha1: float,
+        alpha2: float,
         num_simulators: int,
     ) -> None:
         """Run the program."""
@@ -135,6 +149,10 @@ class Program:
         self.num_evaluations = num_evaluations
         self.standard_deviation = standard_deviation
         self.migration_probability = migration_probability
+        self.theta1 = theta1
+        self.theta2 = theta2
+        self.alpha1 = alpha1
+        self.alpha2 = alpha2
         self.environments = environments
         self.graph = graph
 
@@ -195,25 +213,22 @@ class Program:
         initial_rng = Rng(np.random.Generator(np.random.PCG64(rng_seed)))
 
         initial_genotypes = [
-            GenotypeWithHeritage(
-                genotype=GenotypeWithMeta(
-                    Genotype(
-                        [
-                            float(v)
-                            for v in initial_rng.rng.random(
-                                size=cpg_network_structure.num_connections
-                            )
-                        ]
-                    ),
-                    VisitedEnvironments([env_i]),
+            GenotypeWithMeta(
+                Genotype(
+                    [
+                        float(v)
+                        for v in initial_rng.rng.random(
+                            size=cpg_network_structure.num_connections
+                        )
+                    ]
                 ),
-                came_from=env_i,
+                VisitedEnvironments([env_i]),
             )
             for env_i in range(len(self.graph.nodes))
         ]
 
         eval_descrs = [
-            EvaluationDescription(env, genotype.genotype.genotype)
+            EvaluationDescription(env, genotype.genotype)
             for env, genotype in zip(self.environments, initial_genotypes)
         ]
         logging.info("Measuring initial population..")
@@ -224,6 +239,23 @@ class Program:
             Individual(genotype, measures)
             for genotype, measures in zip(initial_genotypes, all_measures)
         ]
+
+        for i, new_individual in enumerate(initial_population):
+            new_individual.measures["num_neighbours"] = len(
+                self.graph.nodes[i].neighbours
+            )
+
+            new_individual.measures["orig_cluster_size"] = 1 + len(
+                [
+                    n
+                    for n in self.graph.nodes[i].neighbours
+                    if initial_population[n.index].genotype
+                    is initial_population[i].genotype
+                ]
+            )
+            new_individual.measures["orig_cluster_ratio"] = (
+                new_individual.measures["orig_cluster_size"]
+            ) / (1 + new_individual.measures["num_neighbours"])
 
         logging.info("Saving root..")
         state = ProgramState(
@@ -257,7 +289,7 @@ class Program:
         """Iterate one generation further."""
         self.root.program_state.generation_index += 1
 
-        possible_new_genotypes = [
+        possible_new_genotypes_and_sources = [
             self.get_new_genotype(
                 node,
                 self.root.program_state.population,
@@ -269,34 +301,73 @@ class Program:
         ]
 
         eval_descrs = [
-            EvaluationDescription(env, genotype.genotype.genotype)
-            for env, genotype in zip(self.environments, possible_new_genotypes)
-            if genotype is not None
+            EvaluationDescription(env, genotype_and_source[0].genotype)
+            for env, genotype_and_source in zip(
+                self.environments, possible_new_genotypes_and_sources
+            )
+            if genotype_and_source is not None
         ]
 
         measurements = await self.measure(eval_descrs)
 
-        possible_new_individuals: List[Individual[GenotypeWithHeritage, Measures]] = []
+        possible_new_individuals: List[Individual[GenotypeWithMeta, Measures]] = []
         measurements_index = 0
-        for orig_genotype, new_genotype in zip(
-            self.root.program_state.population, possible_new_genotypes
+        for orig_genotype, new_genotype_and_source in zip(
+            self.root.program_state.population, possible_new_genotypes_and_sources
         ):
-            if new_genotype is None:
+            if new_genotype_and_source is None:
                 possible_new_individuals.append(orig_genotype)
             else:
                 possible_new_individuals.append(
-                    Individual(new_genotype, measurements[measurements_index])
+                    Individual(
+                        new_genotype_and_source[0], measurements[measurements_index]
+                    )
                 )
+                possible_new_individuals[-1].measures[
+                    "source"
+                ] = new_genotype_and_source[2].value
+
                 measurements_index += 1
 
         self.root.program_state.performed_evaluations += len(eval_descrs)
 
         offspring = Population(possible_new_individuals)
 
-        pop_indices = replace_if_better(
+        for i, new_individual in enumerate(offspring):
+            new_individual.measures["num_neighbours"] = len(
+                self.graph.nodes[i].neighbours
+            )
+
+            new_individual.measures["new_cluster_size"] = 1 + len(
+                [
+                    n
+                    for n in self.graph.nodes[i].neighbours
+                    if self.root.program_state.population[n.index].genotype
+                    is new_individual.genotype
+                ]
+            )
+            new_individual.measures["new_cluster_ratio"] = (
+                new_individual.measures["new_cluster_size"]
+            ) / (1 + new_individual.measures["num_neighbours"])
+
+            new_individual.measures["orig_cluster_size"] = 1 + len(
+                [
+                    n
+                    for n in self.graph.nodes[i].neighbours
+                    if self.root.program_state.population[n.index].genotype
+                    is self.root.program_state.population[i].genotype
+                ]
+            )
+            new_individual.measures["orig_cluster_ratio"] = (
+                new_individual.measures["orig_cluster_size"]
+            ) / (1 + new_individual.measures["num_neighbours"])
+
+        pop_indices = replace_if(
             self.root.program_state.population,
             offspring,
-            measure="fitness",
+            condition=lambda orig, new: self.replace_check(
+                orig, new, self.root.program_state.rng
+            ),
         )
 
         self.root.program_state.population = Population.from_existing_equally_sized_populations(  # type: ignore # TODO
@@ -304,6 +375,12 @@ class Program:
             pop_indices,
             [
                 "fitness",
+                "source",
+                "num_neighbours",
+                "new_cluster_size",
+                "new_cluster_ratio",
+                "orig_cluster_size",
+                "orig_cluster_ratio",
             ],
         )
 
@@ -314,35 +391,32 @@ class Program:
         rng: Rng,
         standard_deviation: float,
         migration_probability: float,
-    ) -> Optional[GenotypeWithHeritage]:
+    ) -> Optional[Tuple[GenotypeWithMeta, int, GenotypeSource]]:  # int is source node
         if rng.rng.random() < migration_probability:  # migrate
             neighbours_index = rng.rng.integers(0, len(node.neighbours))
             chosen_neighbour = node.neighbours[neighbours_index]
             chosen_genotype = pop[chosen_neighbour.index].genotype
-            if node.index in chosen_genotype.genotype.visited_environments:
+            if node.index in chosen_genotype.visited_environments:
                 return None
             else:
-                chosen_genotype.genotype.visited_environments.append(node.index)
-                return GenotypeWithHeritage(
-                    genotype=chosen_genotype.genotype, came_from=chosen_neighbour.index
+                chosen_genotype.visited_environments.append(node.index)
+                return (
+                    chosen_genotype,
+                    chosen_neighbour.index,
+                    GenotypeSource.MIGRATE,
                 )
         else:  # innovate
             permutation = standard_deviation * rng.rng.standard_normal(
-                len(pop[node.index].genotype.genotype.genotype)
+                len(pop[node.index].genotype.genotype)
             )
-            new_genotype = GenotypeWithHeritage(
-                genotype=GenotypeWithMeta(
-                    bounce_parameters(
-                        Genotype(
-                            pop[node.index].genotype.genotype.genotype + permutation
-                        )
-                    ),
-                    VisitedEnvironments([]),
+            new_genotype = genotype = GenotypeWithMeta(
+                bounce_parameters(
+                    Genotype(pop[node.index].genotype.genotype + permutation)
                 ),
-                came_from=node.index,
+                VisitedEnvironments([]),
             )
-            new_genotype.genotype.visited_environments.append(node.index)
-            return new_genotype
+            new_genotype.visited_environments.append(node.index)
+            return new_genotype, node.index, GenotypeSource.INNOVATE
 
     async def measure(self, eval_descrs: List[EvaluationDescription]) -> List[Measures]:
         """
@@ -353,3 +427,32 @@ class Program:
         """
         fitnesses = await self.evaluator.evaluate(eval_descrs)
         return [Measures(fitness=fitness) for fitness in fitnesses]
+
+    def replace_check(self, orig: Measures, new: Measures, rng: Rng) -> bool:
+        if orig is new:
+            return False
+
+        df = abs(new["fitness"] - orig["fitness"])
+
+        if new["source"] == "innovate":
+            if new["fitness"] >= orig["fitness"] and self.theta1 > 0.0:
+                p = 1.0 - math.exp(
+                    -df / self.alpha1 / self.theta1 / new["orig_cluster_size"]
+                )
+            elif new["fitness"] >= orig["fitness"] and self.theta1 == 0.0:
+                p = 1.0
+            else:  # new fitness is worse
+                p = 0.0
+        elif new["source"] == "migrate":
+            if new["fitness"] >= orig["fitness"]:
+                p = 1.0
+            elif new["fitness"] < orig["fitness"] and self.theta2 > 0:
+                p = 1.0 - math.exp(
+                    -new["new_cluster_size"] / self.alpha2 / self.theta2 / df
+                )
+            else:  # theta == 0.0
+                p = 1.0
+        else:
+            raise NotImplementedError()
+
+        return rng.rng.random() < p

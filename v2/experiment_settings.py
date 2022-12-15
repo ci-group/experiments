@@ -15,7 +15,17 @@ DE_PARAMS = [
 ]  # population_size, crossover_probability, differential_weight
 
 # Graph settings
-GRAPH_PARAMS = [(0.05, 0.5), (0.05, 0.0)]  # standard deviation, migration_probability
+GRAPH_PARAMS = [
+    (
+        0.05,
+        0.5,
+        1.0,
+        1.0,
+        0.0,
+        float("inf"),
+    ),  # innovate and migrate if and only if new fitness is better
+    (0.05, 0.0, 1.0, 1.0, 0.0, float("inf")),
+]  # standard deviation, migration_probability, alpha1, alpha2, theta1, theta2
 
 # Terrain parameters
 TERRAIN_SIZE = (5.0, 5.0)

@@ -250,6 +250,10 @@ async def run_graph(
 
     standard_deviation = GRAPH_PARAMS[graph_params_i][0]
     migration_probability = GRAPH_PARAMS[graph_params_i][1]
+    alpha1 = GRAPH_PARAMS[graph_params_i][2]
+    alpha2 = GRAPH_PARAMS[graph_params_i][3]
+    theta1 = GRAPH_PARAMS[graph_params_i][4]
+    theta2 = GRAPH_PARAMS[graph_params_i][5]
 
     graph, environments = make_graph()
 
@@ -272,6 +276,10 @@ async def run_graph(
             num_evaluations=NUM_EVALUATIONS,
             standard_deviation=standard_deviation,
             migration_probability=migration_probability,
+            alpha1=alpha1,
+            alpha2=alpha2,
+            theta1=theta1,
+            theta2=theta2,
             num_simulators=num_simulators,
         )
 
