@@ -264,7 +264,9 @@ async def run_graph(
     graph, environments = make_graph()
 
     for run in runs:
-        logging.info(f"Running graph s{standard_deviation} run{run}")
+        logging.info(
+            f"Running graph s{standard_deviation} mp{migration_probability} a1{alpha1} a2{alpha2} t1{theta1} t2{theta2} run{run}"
+        )
 
         await graph_program.Program().run(
             database_name=os.path.join(
