@@ -157,10 +157,22 @@ async def load_best_graph(
 ) -> Tuple[Parameters, float]:
     standard_deviation = GRAPH_PARAMS[graph_params_i][0]
     migration_probability = GRAPH_PARAMS[graph_params_i][1]
+    alpha1 = GRAPH_PARAMS[graph_params_i][2]
+    alpha2 = GRAPH_PARAMS[graph_params_i][3]
+    theta1 = GRAPH_PARAMS[graph_params_i][4]
+    theta2 = GRAPH_PARAMS[graph_params_i][5]
 
     database_name = os.path.join(
         database_directory,
-        experiments.graph_database_name(run, standard_deviation, migration_probability),
+        experiments.graph_database_name(
+            run,
+            standard_deviation,
+            migration_probability,
+            alpha1,
+            alpha2,
+            theta1,
+            theta2,
+        ),
     )
 
     db = open_database_sqlite(database_name)
