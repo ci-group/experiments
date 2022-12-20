@@ -1,15 +1,10 @@
-- graph gif over time
 - Generalizability plot (measure & plot all brains in all envs)
-- Graph: source of genotype. migration or innovation?
+
+- Different controller(feed forward nn)
 - Reality gap
 - Evolvability
 
-Maybe?
-- Different controller(feed forward nn)
-- Simulated annealing
-- Force generalist for graph optimizer
 
-
-
-save parents
-cleanup creating new population from existing populations
+ripper5 1-3 (running dec20, predicted finish jan 5)
+ripper7 0+4-6
+ripper3 7-9
