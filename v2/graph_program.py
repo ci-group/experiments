@@ -437,7 +437,7 @@ class Program:
         if new["source"] == "innovate":
             if new["fitness"] >= orig["fitness"] and self.theta1 > 0.0:
                 p = 1.0 - math.exp(
-                    -df / self.alpha1 / self.theta1 / new["orig_cluster_size"]
+                    -df / self.alpha1 / self.theta1 / new["orig_cluster_ratio"]
                 )
             elif new["fitness"] >= orig["fitness"] and self.theta1 == 0.0:
                 p = 1.0
@@ -448,7 +448,7 @@ class Program:
                 p = 1.0
             elif new["fitness"] < orig["fitness"] and self.theta2 > 0:
                 p = 1.0 - math.exp(
-                    -new["new_cluster_size"] / self.alpha2 / self.theta2 / df
+                    -new["new_cluster_ratio"] / self.alpha2 / self.theta2 / df
                 )
             else:  # theta == 0.0
                 p = 1.0
