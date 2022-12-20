@@ -202,16 +202,27 @@ def plot_full_specialist(ax: Axes, database_directory: str, runs: List[int]) -> 
 
 
 def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
-    for (standard_deviation, migration_probability), plot_color in zip(
-        GRAPH_PARAMS, ["#dddd00", "#aaddaa"]
-    ):
+    for (
+        standard_deviation,
+        migration_probability,
+        alpha1,
+        alpha2,
+        theta1,
+        theta2,
+    ), plot_color in zip(GRAPH_PARAMS, ["#dddd00", "#aaddaa"]):
         fitnesses_per_run: List[pandas.DataFrame] = []
         for run in runs:
             db = open_database_sqlite(
                 os.path.join(
                     database_directory,
                     experiments.graph_database_name(
-                        run, standard_deviation, migration_probability
+                        run,
+                        standard_deviation,
+                        migration_probability,
+                        alpha1,
+                        alpha2,
+                        theta1,
+                        theta2,
                     ),
                 )
             )
@@ -255,7 +266,7 @@ def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
         )
         describe[["mean"]].rename(
             columns={
-                "mean": f"Graph optimization (std={standard_deviation}, mp={migration_probability})"
+                "mean": f"Graph optimization (std={standard_deviation}, mp={migration_probability}, a1={alpha1}, a2={alpha2}, t1={theta1}, t2={theta2})"
             }
         ).plot(ax=ax, color=plot_color)
 
