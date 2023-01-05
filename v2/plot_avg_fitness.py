@@ -22,6 +22,8 @@ import experiments
 import argparse
 import os
 import graph_program
+import random
+from labellines import labelLines
 
 num_bodies = len(make_bodies()[0])
 
@@ -209,7 +211,7 @@ def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
         alpha2,
         theta1,
         theta2,
-    ), plot_color in zip(GRAPH_PARAMS, ["#dddd00", "#aaddaa"]):
+    ) in GRAPH_PARAMS:
         fitnesses_per_run: List[pandas.DataFrame] = []
         for run in runs:
             db = open_database_sqlite(
@@ -258,6 +260,11 @@ def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
         describe = fitnesses.groupby(by="performed_evaluations").describe()["fitness"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
+
+        plot_color = "#" + "".join(
+            [random.choice("0123456789ABCDEF") for j in range(6)]
+        )
+
         plt.fill_between(
             fitnesses["performed_evaluations"].unique(),
             mean - std,
@@ -277,10 +284,11 @@ parser.add_argument("-r", "--runs", type=str, required=True)
 args = parser.parse_args()
 runs = experiments.parse_runs_arg(args.runs)
 
-plot_full_generalist(ax=ax, database_directory=args.database_directory, runs=runs)
-plot_full_specialist(ax=ax, database_directory=args.database_directory, runs=runs)
+# plot_full_generalist(ax=ax, database_directory=args.database_directory, runs=runs)
+# plot_full_specialist(ax=ax, database_directory=args.database_directory, runs=runs)
 plot_graph(ax=ax, database_directory=args.database_directory, runs=runs)
 ax.set_xlabel("Number of evaluations")
 ax.set_ylabel("Fitness (approx. cm/s)")
 plt.title("Graph optimization and baseline performance")
+labelLines(plt.gca().get_lines(), zorder=2.5)
 plt.show()
