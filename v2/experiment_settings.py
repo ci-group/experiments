@@ -15,8 +15,8 @@ DE_PARAMS = [
 # Graph settings
 GRAPH_STD = 0.05
 GRAPH_PMIG = 0.5
-GRAPH_ALPHA1 = 100.0
-GRAPH_ALPHA2 = 5.0
+GRAPH_ALPHA1 = 20.0
+GRAPH_ALPHA2 = 3.0
 GRAPH_PARAMS = [
     (
         GRAPH_STD,
@@ -117,7 +117,7 @@ GRAPH_PARAMS = [
 ]  # standard deviation, migration_probability, alpha1, alpha2, theta1, theta2
 
 # Terrain parameters
-TERRAIN_SIZE = (5.0, 5.0)
+TERRAIN_SIZE = (8.0, 8.0)
 TERRAIN_GRANULARITY = 0.5
 RUGGEDNESS_RANGE = np.arange(0.0, 0.5, 0.1)
 BOWLNESS_RANGE = np.arange(0.0, 2.5, 0.5)
