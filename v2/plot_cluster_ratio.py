@@ -22,8 +22,6 @@ import experiments
 import argparse
 import os
 import graph_program
-import random
-from labellines import labelLines
 
 num_bodies = len(make_bodies()[0])
 
@@ -211,7 +209,7 @@ def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
         alpha2,
         theta1,
         theta2,
-    ) in GRAPH_PARAMS:
+    ), plot_color in zip(GRAPH_PARAMS, ["#dddd00", "#aaddaa"]):
         fitnesses_per_run: List[pandas.DataFrame] = []
         for run in runs:
             db = open_database_sqlite(
@@ -244,12 +242,11 @@ def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
                     )
                 ),
                 db,
-            )[["fitness", "performed_evaluations"]]
-            df["fitness"] = df["fitness"] / SIMULATION_TIME * 10
+            )[["orig_cluster_ratio", "performed_evaluations"]]
 
             combined_fitnesses_per_gen = (
                 df.groupby(by=["performed_evaluations"])
-                .agg({"fitness": sqrtfitness})
+                .agg({"orig_cluster_ratio": sqrtfitness})
                 .reset_index()
             )
 
@@ -257,14 +254,9 @@ def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
 
         fitnesses = pandas.concat(fitnesses_per_run)
 
-        describe = fitnesses.groupby(by="performed_evaluations").describe()["fitness"]
+        describe = fitnesses.groupby(by="performed_evaluations").describe()["orig_cluster_ratio"]
         mean = describe[["mean"]].values.squeeze()
         std = describe[["std"]].values.squeeze()
-
-        plot_color = "#" + "".join(
-            [random.choice("0123456789ABCDEF") for j in range(6)]
-        )
-
         plt.fill_between(
             fitnesses["performed_evaluations"].unique(),
             mean - std,
@@ -273,9 +265,9 @@ def plot_graph(ax: Axes, database_directory: str, runs: List[int]) -> None:
         )
         describe[["mean"]].rename(
             columns={
-                "mean": f"a1={alpha1}, a2={alpha2}"  # f"Graph optimization (std={standard_deviation}, mp={migration_probability}, a1={alpha1}, a2={alpha2}, t1={theta1}, t2={theta2})"
+                "mean": f"Graph optimization (std={standard_deviation}, mp={migration_probability}, a1={alpha1}, a2={alpha2}, t1={theta1}, t2={theta2})"
             }
-        ).plot(ax=ax, color=plot_color, lw=1)
+        ).plot(ax=ax, color=plot_color)
 
 
 parser = argparse.ArgumentParser()
@@ -288,7 +280,6 @@ runs = experiments.parse_runs_arg(args.runs)
 # plot_full_specialist(ax=ax, database_directory=args.database_directory, runs=runs)
 plot_graph(ax=ax, database_directory=args.database_directory, runs=runs)
 ax.set_xlabel("Number of evaluations")
-ax.set_ylabel("Fitness (approx. cm/s)")
+ax.set_ylabel("Cluster ratio")
 plt.title("Graph optimization and baseline performance")
-labelLines(plt.gca().get_lines(), zorder=2.5, align=False)
 plt.show()
