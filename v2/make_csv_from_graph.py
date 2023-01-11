@@ -21,14 +21,14 @@ import argparse
 import os
 import graph_program
 
-database_directory = "dbs_finalgraph_dec16"
-run = 0
+database_directory = "dbs"
+run = 6
 standard_deviation = 0.05
 migration_probability = 0.5
-alpha1 = 1.0
-alpha2 = 8.0
-theta1 = 1.0
-theta2 = 1.0
+alpha1 = 30.0
+alpha2 = 3.0
+theta1 = 0.5
+theta2 = 0.5
 
 db = open_database_sqlite(
     os.path.join(
