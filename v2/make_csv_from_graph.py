@@ -22,7 +22,7 @@ import os
 import graph_program
 
 database_directory = "dbs"
-run = 6
+run = 0
 standard_deviation = 0.05
 migration_probability = 0.5
 alpha1 = 30.0
@@ -82,4 +82,13 @@ pivoted2 = df[["generation_index", "index", "fitness"]].pivot(
 
 pivoted2.to_csv(
     f"{experiments.graph_database_name(run, standard_deviation, migration_probability, alpha1, alpha2, theta1, theta2)}_fitness.csv"
+)
+
+df2 = pandas.read_sql(
+    select(graph_program.Parameters.item_table),
+    db,
+)
+pivoted3 = df2.pivot(index="parameters_id", columns="index", values="parameter")
+pivoted3.to_csv(
+    f"{experiments.graph_database_name(run, standard_deviation, migration_probability, alpha1, alpha2, theta1, theta2)}_parameters.csv"
 )
