@@ -1,46 +1,18 @@
 from experiment_settings import (
     NUM_EVALUATIONS,
-    RUGGEDNESS_RANGE,
-    BOWLNESS_RANGE,
-    TERRAIN_SIZE,
-    TERRAIN_GRANULARITY,
     DE_PARAMS,
     GRAPH_PARAMS,
 )
-from bodies import make_bodies
 import argparse
-from typing import List, Tuple
-from environment_name import EnvironmentName
+from typing import List
 from environment import Environment
-from terrain_generator import terrain_generator
-from bodies import make_bodies
 import de_program
 import os
-from graph import Graph, Node
 import graph_program
 import logging
-from typed_argparse import Choices
-
-
-def de_generalist_database_name(
-    run: int,
-    population_size: int,
-    crossover_probability: float,
-    differential_weight: float,
-) -> None:
-    return f"de_generalist_p{population_size}_cr{crossover_probability}_f{differential_weight}_run{run}"
-
-
-def de_specialist_database_name(
-    run: int,
-    population_size: int,
-    crossover_probability: float,
-    differential_weight: float,
-    body_i: int,
-    ruggedness_i: int,
-    bowlness_i: int,
-) -> None:
-    return f"de_specialist_p{population_size}_cr{crossover_probability}_f{differential_weight}_body{body_i}_ruggedness{ruggedness_i}_bowlness{bowlness_i}_run{run}"
+from make_graph import make_graph
+from partition import partition
+from graph import Graph
 
 
 def graph_database_name(
@@ -51,206 +23,28 @@ def graph_database_name(
     alpha2: float,
     theta1: float,
     theta2: float,
-) -> None:
+) -> str:
     return f"graph_s{standard_deviation}_mp{migration_probability}_a1{alpha1}_a2{alpha2}_t1{theta1}_t2{theta2}_run{run}"
 
 
-async def run_de_generalist(
-    database_directory: str, runs: List[int], de_params_i: int, num_simulators: int
-) -> None:
-    SEED_BASE = 23678400
-
-    population_size = DE_PARAMS[de_params_i][0]
-    crossover_probability = DE_PARAMS[de_params_i][1]
-    differential_weight = DE_PARAMS[de_params_i][2]
-
-    bodies, dof_maps = make_bodies()
-
-    environments: List[Environment] = []
-
-    for ruggedness_i, ruggedness in enumerate(RUGGEDNESS_RANGE):
-        for bowlness_i, bowlness in enumerate(BOWLNESS_RANGE):
-            terrain = terrain_generator(
-                size=TERRAIN_SIZE,
-                ruggedness=ruggedness,
-                bowlness=bowlness,
-                granularity_multiplier=TERRAIN_GRANULARITY,
-            )
-            for body_i, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
-                environments.append(
-                    Environment(
-                        body,
-                        dof_map,
-                        terrain,
-                        EnvironmentName(body_i, ruggedness_i, bowlness_i),
-                    )
-                )
-
-    for run in runs:
-        logging.info(
-            f"Running de generalist p{population_size} cr{crossover_probability} f{differential_weight} run{run}"
-        )
-
-        await de_program.Program().run(
-            database_name=os.path.join(
-                database_directory,
-                de_generalist_database_name(
-                    run=run,
-                    population_size=population_size,
-                    crossover_probability=crossover_probability,
-                    differential_weight=differential_weight,
-                ),
-            ),
-            headless=True,
-            rng_seed=SEED_BASE + run * len(DE_PARAMS) + de_params_i,
-            population_size=population_size,
-            crossover_probability=crossover_probability,
-            differential_weight=differential_weight,
-            num_evaluations=NUM_EVALUATIONS,
-            environments=environments,
-            num_simulators=num_simulators,
-        )
-
-
-async def run_de_specialist(
-    database_directory: str,
-    runs: List[int],
-    body_i: int,
-    ruggedness_i: int,
-    bowlness_i: int,
-    de_params_i: int,
-    num_simulators: int,
-) -> None:
-    SEED_BASE = 196783254
-
-    num_evaluations = NUM_EVALUATIONS / len(
-        make_bodies()[0] * len(RUGGEDNESS_RANGE) * len(BOWLNESS_RANGE)
-    )
-
-    ruggedness = RUGGEDNESS_RANGE[ruggedness_i]
-    bowlness = BOWLNESS_RANGE[bowlness_i]
-
-    population_size = DE_PARAMS[de_params_i][0]
-    crossover_probability = DE_PARAMS[de_params_i][1]
-    differential_weight = DE_PARAMS[de_params_i][2]
-
-    bodies, dof_maps = make_bodies()
-
-    environment = Environment(
-        bodies[body_i],
-        dof_maps[body_i],
-        terrain_generator(
-            size=TERRAIN_SIZE,
-            ruggedness=ruggedness,
-            bowlness=bowlness,
-            granularity_multiplier=TERRAIN_GRANULARITY,
-        ),
-        EnvironmentName(body_i, ruggedness_i, bowlness_i),
-    )
-
-    for run in runs:
-        logging.info(
-            f"Running de specialist p{population_size} cr{crossover_probability} f{differential_weight} body{body_i} ruggedness{ruggedness_i} bowlness{bowlness_i} run{run}"
-        )
-
-        await de_program.Program().run(
-            database_name=os.path.join(
-                database_directory,
-                de_specialist_database_name(
-                    run=run,
-                    population_size=population_size,
-                    crossover_probability=crossover_probability,
-                    differential_weight=differential_weight,
-                    body_i=body_i,
-                    ruggedness_i=ruggedness_i,
-                    bowlness_i=bowlness_i,
-                ),
-            ),
-            headless=True,
-            rng_seed=SEED_BASE
-            + run
-            * len(BOWLNESS_RANGE)
-            * len(RUGGEDNESS_RANGE)
-            * len(bodies)
-            * len(DE_PARAMS)
-            + bowlness_i * len(RUGGEDNESS_RANGE) * len(bodies) * len(DE_PARAMS)
-            + ruggedness_i * len(bodies) * len(DE_PARAMS)
-            + body_i * len(DE_PARAMS)
-            + de_params_i,
-            population_size=population_size,
-            crossover_probability=crossover_probability,
-            differential_weight=differential_weight,
-            num_evaluations=num_evaluations,
-            environments=[environment],
-            num_simulators=num_simulators,
-        )
-
-
-async def run_de_specialist_all(
-    database_directory: str, runs: List[int], de_params_i: int, num_simulators: int
-) -> None:
-    for run in runs:
-        for ruggedness_i in range(len(RUGGEDNESS_RANGE)):
-            for bowlness_i in range(len(BOWLNESS_RANGE)):
-                for body_i in range(len(make_bodies()[0])):
-                    await run_de_specialist(
-                        database_directory=database_directory,
-                        runs=[run],
-                        body_i=body_i,
-                        ruggedness_i=ruggedness_i,
-                        bowlness_i=bowlness_i,
-                        de_params_i=de_params_i,
-                        num_simulators=num_simulators,
-                    )
-
-
-def make_graph() -> Tuple[Graph, List[Environment]]:
-    bodies, dof_maps = make_bodies()
-
-    nodes: List[Node] = []
-    envs: List[Environment] = []
-
-    for ruggedness_i, ruggedness in enumerate(RUGGEDNESS_RANGE):
-        for bowlness_i, bowlness in enumerate(BOWLNESS_RANGE):
-            terrain = terrain_generator(
-                size=TERRAIN_SIZE,
-                ruggedness=ruggedness,
-                bowlness=bowlness,
-                granularity_multiplier=TERRAIN_GRANULARITY,
-            )
-            for body_i, (body, dof_map) in enumerate(zip(bodies, dof_maps)):
-                node = Node(len(nodes))
-                nodes.append(node)
-                envs.append(
-                    Environment(
-                        body,
-                        dof_map,
-                        terrain,
-                        EnvironmentName(body_i, ruggedness_i, bowlness_i),
-                    )
-                )
-                nodes[-1].env = envs[-1]
-
-    for node1 in nodes:
-        for node2 in nodes:
-            if node1 == node2:
-                continue
-
-            env1 = envs[node1.index]
-            env2 = envs[node2.index]
-
-            if (
-                abs(env1.name.body_num - env2.name.body_num) <= 1
-                and abs(env1.name.ruggedness_num - env2.name.ruggedness_num) <= 1
-                and abs(env1.name.bowlness_num - env2.name.bowlness_num) <= 1
-            ):
-                node1.neighbours.append(node2)
-
-    return Graph(nodes), envs
+def de_database_name(
+    run: int,
+    population_size: int,
+    crossover_probability: float,
+    differential_weight: float,
+    partition_size: int,
+    partition_num: int,
+) -> str:
+    return f"de_specialist_p{population_size}_cr{crossover_probability}_f{differential_weight}_psize{partition_size}_pnum{partition_num}_run{run}"
 
 
 async def run_graph(
-    runs: List[int], database_directory: str, graph_params_i: int, num_simulators: int
+    graph: Graph,
+    environments: List[Environment],
+    runs: List[int],
+    database_directory: str,
+    graph_params_i: int,
+    num_simulators: int,
 ) -> None:
     SEED_BASE = 732091019
 
@@ -260,8 +54,6 @@ async def run_graph(
     alpha2 = GRAPH_PARAMS[graph_params_i][3]
     theta1 = GRAPH_PARAMS[graph_params_i][4]
     theta2 = GRAPH_PARAMS[graph_params_i][5]
-
-    graph, environments = make_graph()
 
     for run in runs:
         logging.info(
@@ -296,35 +88,82 @@ async def run_graph(
         )
 
 
-async def run_all(
-    experiments: List[str],
-    runs: List[int],
+async def run_de(
+    rng_seed: int,
+    graph: Graph,
+    environments: List[Environment],
     database_directory: str,
+    de_params_i: int,
+    num_simulators: int,
+    partition_num: int,
+    num_evaluations: int,
+    run: int,
+) -> None:
+    population_size = DE_PARAMS[de_params_i][0]
+    crossover_probability = DE_PARAMS[de_params_i][1]
+    differential_weight = DE_PARAMS[de_params_i][2]
+    partition_size = DE_PARAMS[de_params_i][3]
+
+    logging.info(
+        f"Running de p{population_size} cr{crossover_probability} f{differential_weight} psize{partition_size} pnum{partition_num} run{run}"
+    )
+
+    used_envs = [environments[node.index] for node in graph.nodes]
+
+    await de_program.Program().run(
+        database_name=os.path.join(
+            database_directory,
+            de_database_name(
+                run=run,
+                population_size=population_size,
+                crossover_probability=crossover_probability,
+                differential_weight=differential_weight,
+                partition_size=partition_size,
+                partition_num=partition_num,
+            ),
+        ),
+        headless=True,
+        rng_seed=rng_seed,
+        population_size=population_size,
+        crossover_probability=crossover_probability,
+        differential_weight=differential_weight,
+        num_evaluations=num_evaluations,
+        environments=used_envs,
+        num_simulators=num_simulators,
+    )
+
+
+async def run_de_all(
+    graph: Graph,
+    environments: List[Environment],
+    database_directory: str,
+    runs: List[int],
     num_simulators: int,
 ) -> None:
+    SEED_BASE = 196783254
+
     for run in runs:
         for de_params_i in range(len(DE_PARAMS)):
-            if len(experiments) == 0 or "de_generalist" in experiments:
-                await run_de_generalist(
+            partition_size = DE_PARAMS[de_params_i][3]
+            num_partitions = round(len(graph.nodes) / partition_size)
+            num_evaluations = round(NUM_EVALUATIONS / num_partitions)
+
+            logging.info("Making partitions..")
+            partitions = partition(graph, environments, num_partitions)
+            logging.info("Done making partitions.")
+            for part_i, part in enumerate(partitions):
+                await run_de(
+                    rng_seed=(
+                        hash(SEED_BASE) + hash(de_params_i) + hash(run) + hash(part_i)
+                    ),
+                    graph=part,
+                    environments=environments,
                     database_directory=database_directory,
-                    runs=[run],
                     de_params_i=de_params_i,
                     num_simulators=num_simulators,
-                )
-            if len(experiments) == 0 or "de_specialist" in experiments:
-                await run_de_specialist_all(
-                    database_directory=database_directory,
-                    runs=[run],
-                    de_params_i=de_params_i,
-                    num_simulators=num_simulators,
-                )
-        for graph_params_i in range(len(GRAPH_PARAMS)):
-            if len(experiments) == 0 or "graph" in experiments:
-                await run_graph(
-                    runs=[run],
-                    database_directory=database_directory,
-                    graph_params_i=graph_params_i,
-                    num_simulators=num_simulators,
+                    partition_num=part_i,
+                    num_evaluations=num_evaluations,
+                    run=run,
                 )
 
 
@@ -354,54 +193,33 @@ async def main() -> None:
     subparsers = parser.add_subparsers(dest="experiment", required=True)
     parser.add_argument("-s", "--num_simulators", type=int, required=True)
 
-    de_generalist_parser = subparsers.add_parser("de_generalist")
-    de_generalist_parser.add_argument("--de_params_i", type=int, required=True)
-
-    de_specialist_parser = subparsers.add_parser("de_specialist")
-    de_specialist_parser.add_argument("--de_params_i", type=int, required=True)
+    subparsers.add_parser("de")
 
     graph_parser = subparsers.add_parser("graph")
     graph_parser.add_argument("--graph_params_i", type=int, required=True)
-
-    all_parser = subparsers.add_parser("all")
-    all_parser.add_argument(
-        "experiments",
-        choices=Choices("de_generalist", "de_specialist", "graph"),
-        default=[],
-        nargs="*",
-    )
 
     args = parser.parse_args()
     runs = parse_runs_arg(args.runs)
     logging.info(f"Running runs {runs} (including last one).")
 
-    if args.experiment == "de_generalist":
-        await run_de_generalist(
-            database_directory=args.database_directory,
-            runs=runs,
-            de_params_i=args.de_params_i,
-            num_simulators=args.num_simulators,
-        )
-    elif args.experiment == "de_specialist":
-        await run_de_specialist_all(
-            database_directory=args.database_directory,
-            runs=runs,
-            de_params_i=args.de_params_i,
-            num_simulators=args.num_simulators,
-        )
-    elif args.experiment == "graph":
+    graph, environments = make_graph()
+
+    if args.experiment == "graph":
         await run_graph(
+            graph=graph,
+            environments=environments,
             runs=runs,
             database_directory=args.database_directory,
             graph_params_i=args.graph_params_i,
             num_simulators=args.num_simulators,
         )
-    elif args.experiment == "all":
-        await run_all(
+    elif args.experiment == "de":
+        await run_de_all(
+            graph=graph,
+            environments=environments,
             runs=runs,
             database_directory=args.database_directory,
             num_simulators=args.num_simulators,
-            experiments=args.experiments,
         )
     else:
         raise NotImplementedError()
