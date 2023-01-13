@@ -225,7 +225,7 @@ class Program:
 
         fitnesses = np.array(await self.evaluator.evaluate(evalsets))
         fitnesses.resize(len(population), len(self.environments))
-        combined_fitnesses = np.square(np.average(np.sqrt(fitnesses), axis=1))
+        combined_fitnesses = np.average(fitnesses, axis=1)
 
         for individual, seperate_fitnesses, combined_fitness in zip(
             population, fitnesses, combined_fitnesses
