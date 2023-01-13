@@ -9,13 +9,16 @@ NUM_EVALUATIONS = 300000
 
 # DE settings
 DE_PARAMS = [
-    (50, 0.9, 0.2),
-]  # population_size, crossover_probability, differential_weight
+    (50, 0.9, 0.2, 1),
+    (50, 0.9, 0.2, 5),
+    (50, 0.9, 0.2, 25),
+    (50, 0.9, 0.2, 125),
+]  # population_size, crossover_probability, differential_weight, partition_size
 
 # Graph settings
 GRAPH_STD = 0.05
 GRAPH_PMIG = 0.5
-GRAPH_ALPHA1 = 20.0
+GRAPH_ALPHA1 = 30.0
 GRAPH_ALPHA2 = 3.0
 GRAPH_PARAMS = [
     (
