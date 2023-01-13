@@ -3,7 +3,6 @@ from environment import Environment
 from typing import List
 import math
 import numpy as np
-from make_graph import make_graph
 from collections import deque
 import random
 
@@ -22,8 +21,7 @@ def find_start_points(
     points = [
         graph.nodes[rng.randint(0, len(graph.nodes) - 1)] for _ in range(num_points)
     ]
-    for z in range(500):
-        print(z)
+    for _ in range(500):
         for i, point in enumerate(points):
             neighbor_scores = [
                 min(
