@@ -1,4 +1,5 @@
 import numpy as np
+import itertools
 
 # simulation settings
 SIMULATION_TIME = 30
@@ -20,103 +21,18 @@ GRAPH_STD = 0.05
 GRAPH_PMIG = 0.5
 GRAPH_ALPHA1 = 30.0
 GRAPH_ALPHA2 = 3.0
+THETA1S = [0.0, 1.0, 2.0]
+THETA2S = [0.25, 0.5, float("inf")]
 GRAPH_PARAMS = [
     (
         GRAPH_STD,
         GRAPH_PMIG,
         GRAPH_ALPHA1,
         GRAPH_ALPHA2,
-        0.5,
-        0.5,
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        1.0,
-        1.0,
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        0.0,
-        0.5,
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        0.0,
-        0.0,
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        0.5,
-        0.0,
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        1.0,
-        0.0,
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        1.0,
-        0.5,
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        0.0,
-        1.0,
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        0.5,
-        1.0,
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        0.0,
-        float("inf"),
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        0.5,
-        float("inf"),
-    ),
-    (
-        GRAPH_STD,
-        GRAPH_PMIG,
-        GRAPH_ALPHA1,
-        GRAPH_ALPHA2,
-        1.0,
-        float("inf"),
-    ),
+        i[0],
+        i[1],
+    )
+    for i in itertools.product(THETA1S, THETA2S)
 ]  # standard deviation, migration_probability, alpha1, alpha2, theta1, theta2
 
 # Terrain parameters
