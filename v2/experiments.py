@@ -39,15 +39,14 @@ def de_database_name(
 
 
 async def run_graph(
+    rng_seed: int,
     graph: Graph,
     environments: List[Environment],
-    runs: List[int],
     database_directory: str,
     graph_params_i: int,
     num_simulators: int,
+    run: int,
 ) -> None:
-    SEED_BASE = 732091019
-
     standard_deviation = GRAPH_PARAMS[graph_params_i][0]
     migration_probability = GRAPH_PARAMS[graph_params_i][1]
     alpha1 = GRAPH_PARAMS[graph_params_i][2]
@@ -55,37 +54,58 @@ async def run_graph(
     theta1 = GRAPH_PARAMS[graph_params_i][4]
     theta2 = GRAPH_PARAMS[graph_params_i][5]
 
-    for run in runs:
-        logging.info(
-            f"Running graph s{standard_deviation} mp{migration_probability} a1{alpha1} a2{alpha2} t1{theta1} t2{theta2} run{run}"
-        )
+    logging.info(
+        f"Running graph s{standard_deviation} mp{migration_probability} a1{alpha1} a2{alpha2} t1{theta1} t2{theta2} run{run}"
+    )
 
-        await graph_program.Program().run(
-            database_name=os.path.join(
-                database_directory,
-                graph_database_name(
-                    run=run,
-                    standard_deviation=standard_deviation,
-                    migration_probability=migration_probability,
-                    alpha1=alpha1,
-                    alpha2=alpha2,
-                    theta1=theta1,
-                    theta2=theta2,
-                ),
+    await graph_program.Program().run(
+        database_name=os.path.join(
+            database_directory,
+            graph_database_name(
+                run=run,
+                standard_deviation=standard_deviation,
+                migration_probability=migration_probability,
+                alpha1=alpha1,
+                alpha2=alpha2,
+                theta1=theta1,
+                theta2=theta2,
             ),
-            headless=True,
-            rng_seed=SEED_BASE + run * len(GRAPH_PARAMS) + graph_params_i,
-            environments=environments,
-            graph=graph,
-            num_evaluations=NUM_EVALUATIONS,
-            standard_deviation=standard_deviation,
-            migration_probability=migration_probability,
-            alpha1=alpha1,
-            alpha2=alpha2,
-            theta1=theta1,
-            theta2=theta2,
-            num_simulators=num_simulators,
-        )
+        ),
+        headless=True,
+        rng_seed=rng_seed,
+        environments=environments,
+        graph=graph,
+        num_evaluations=NUM_EVALUATIONS,
+        standard_deviation=standard_deviation,
+        migration_probability=migration_probability,
+        alpha1=alpha1,
+        alpha2=alpha2,
+        theta1=theta1,
+        theta2=theta2,
+        num_simulators=num_simulators,
+    )
+
+
+async def run_graph_all(
+    graph: Graph,
+    environments: List[Environment],
+    database_directory: str,
+    runs: List[int],
+    num_simulators: int,
+) -> None:
+    SEED_BASE = 732091019
+
+    for run in runs:
+        for graph_params_i in range(len(GRAPH_PARAMS)):
+            await run_graph(
+                rng_seed=(hash(SEED_BASE) + hash(graph_params_i) + hash(run)),
+                graph=graph,
+                environments=environments,
+                database_directory=database_directory,
+                graph_params_i=graph_params_i,
+                num_simulators=num_simulators,
+                run=run,
+            )
 
 
 async def run_de(
@@ -195,8 +215,7 @@ async def main() -> None:
 
     subparsers.add_parser("de")
 
-    graph_parser = subparsers.add_parser("graph")
-    graph_parser.add_argument("--graph_params_i", type=int, required=True)
+    subparsers.add_parser("graph")
 
     args = parser.parse_args()
     runs = parse_runs_arg(args.runs)
@@ -205,12 +224,11 @@ async def main() -> None:
     graph, environments = make_graph()
 
     if args.experiment == "graph":
-        await run_graph(
+        await run_graph_all(
             graph=graph,
             environments=environments,
             runs=runs,
             database_directory=args.database_directory,
-            graph_params_i=args.graph_params_i,
             num_simulators=args.num_simulators,
         )
     elif args.experiment == "de":
