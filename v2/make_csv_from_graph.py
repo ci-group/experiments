@@ -11,6 +11,12 @@ from experiment_settings import (
     GRAPH_PARAMS,
     RUGGEDNESS_RANGE,
     BOWLNESS_RANGE,
+    THETA1S,
+    THETA2S,
+    GRAPH_ALPHA1,
+    GRAPH_ALPHA2,
+    GRAPH_STD,
+    GRAPH_PMIG,
 )
 from bodies import make_bodies
 from typing import List
@@ -20,89 +26,90 @@ import experiments
 import argparse
 import os
 import graph_program
+import itertools
 
-database_directory = "dbs"
-run = 0
+database_directory = "paper_10jan"
+out_dir = database_directory + "_csvs"
+runs = [0, 6, 7]
 standard_deviation = 0.05
 migration_probability = 0.5
-alpha1 = 30.0
-alpha2 = 3.0
+alpha1 = GRAPH_ALPHA1
+alpha2 = GRAPH_ALPHA2
 
-thetas = [
-    (0.0, 0.0),
-    (0.0, 0.5),
-    (0.0, 1.0),
-    (0.0, float("inf")),
-    (0.5, 0.0),
-    (0.5, 0.5),
-    (0.5, 1.0),
-    (0.5, float("inf")),
-    (1.0, 0.0),
-    (1.0, 0.5),
-    (1.0, 1.0),
-    (1.0, float("inf")),
-]
+thetas = [x for x in itertools.product(THETA1S, THETA2S)]
 
-for (theta1, theta2) in thetas:
-    db = open_database_sqlite(
-        os.path.join(
-            database_directory,
-            experiments.graph_database_name(
-                run,
-                standard_deviation,
-                migration_probability,
-                alpha1,
-                alpha2,
-                theta1,
-                theta2,
-            ),
+for run in runs:
+    for (theta1, theta2) in thetas:
+        print(f"run {run} theta1 {theta1} theta2 {theta2}")
+
+        db = open_database_sqlite(
+            os.path.join(
+                database_directory,
+                experiments.graph_database_name(
+                    run,
+                    standard_deviation,
+                    migration_probability,
+                    alpha1,
+                    alpha2,
+                    theta1,
+                    theta2,
+                ),
+            )
         )
-    )
-    df = pandas.read_sql(
-        select(
-            graph_program.ProgramState.table,
-            graph_program.Population.item_table,
-            graph_program.GenotypeWithMeta.table.id,
-            graph_program.GenotypeWithMeta.table.genotype.label("genotype_id"),
-            graph_program.Measures.table,
-        ).filter(
-            (
-                graph_program.ProgramState.table.population
-                == graph_program.Population.item_table.list_id
+        df = pandas.read_sql(
+            select(
+                graph_program.ProgramState.table,
+                graph_program.Population.item_table,
+                graph_program.GenotypeWithMeta.table.id,
+                graph_program.GenotypeWithMeta.table.genotype.label("genotype_id"),
+                graph_program.Measures.table,
+            ).filter(
+                (
+                    graph_program.ProgramState.table.population
+                    == graph_program.Population.item_table.list_id
+                )
+                & (
+                    graph_program.Population.item_table.genotype
+                    == graph_program.GenotypeWithMeta.table.id
+                )
+                & (
+                    graph_program.Population.item_table.measures
+                    == graph_program.Measures.table.id
+                )
+            ),
+            db,
+        )
+
+        pivoted = df[["generation_index", "index", "genotype_id"]].pivot(
+            index="generation_index", columns="index", values="genotype_id"
+        )
+
+        pivoted.to_csv(
+            os.path.join(
+                out_dir,
+                f"{experiments.graph_database_name(run, standard_deviation, migration_probability, alpha1, alpha2, theta1, theta2)}_genotype.csv",
             )
-            & (
-                graph_program.Population.item_table.genotype
-                == graph_program.GenotypeWithMeta.table.id
+        )
+
+        pivoted2 = df[["generation_index", "index", "fitness"]].pivot(
+            index="generation_index", columns="index", values="fitness"
+        )
+
+        pivoted2.to_csv(
+            os.path.join(
+                out_dir,
+                f"{experiments.graph_database_name(run, standard_deviation, migration_probability, alpha1, alpha2, theta1, theta2)}_fitness.csv",
             )
-            & (
-                graph_program.Population.item_table.measures
-                == graph_program.Measures.table.id
+        )
+
+        df2 = pandas.read_sql(
+            select(graph_program.Parameters.item_table),
+            db,
+        )
+        pivoted3 = df2.pivot(index="parameters_id", columns="index", values="parameter")
+        pivoted3.to_csv(
+            os.path.join(
+                out_dir,
+                f"{experiments.graph_database_name(run, standard_deviation, migration_probability, alpha1, alpha2, theta1, theta2)}_parameters.csv",
             )
-        ),
-        db,
-    )
-
-    pivoted = df[["generation_index", "index", "genotype_id"]].pivot(
-        index="generation_index", columns="index", values="genotype_id"
-    )
-
-    pivoted.to_csv(
-        f"{experiments.graph_database_name(run, standard_deviation, migration_probability, alpha1, alpha2, theta1, theta2)}_genotype.csv"
-    )
-
-    pivoted2 = df[["generation_index", "index", "fitness"]].pivot(
-        index="generation_index", columns="index", values="fitness"
-    )
-
-    pivoted2.to_csv(
-        f"{experiments.graph_database_name(run, standard_deviation, migration_probability, alpha1, alpha2, theta1, theta2)}_fitness.csv"
-    )
-
-    df2 = pandas.read_sql(
-        select(graph_program.Parameters.item_table),
-        db,
-    )
-    pivoted3 = df2.pivot(index="parameters_id", columns="index", values="parameter")
-    pivoted3.to_csv(
-        f"{experiments.graph_database_name(run, standard_deviation, migration_probability, alpha1, alpha2, theta1, theta2)}_parameters.csv"
-    )
+        )

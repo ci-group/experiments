@@ -1,9 +1,9 @@
 - Reality gap
 - Evolvability
 
-pick the 5x5 environments
-measure each solution in each environments
-do this for all cluster sizes
+generality measure for de
+
+
 
 ripper4 0-2
 ripper3 3-5
