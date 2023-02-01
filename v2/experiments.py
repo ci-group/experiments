@@ -36,7 +36,7 @@ def de_database_name(
     partition_size: int,
     partition_num: int,
 ) -> str:
-    return f"de_specialist_p{population_size}_cr{crossover_probability}_f{differential_weight}_psize{partition_size}_pnum{partition_num}_run{run}"
+    return f"de_p{population_size}_cr{crossover_probability}_f{differential_weight}_psize{partition_size}_pnum{partition_num}_run{run}"
 
 
 async def run_graph(
