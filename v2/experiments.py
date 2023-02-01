@@ -41,7 +41,7 @@ def cmaes_database_name(
     partition_size: int,
     partition_num: int,
 ) -> str:
-    return f"de_psize{partition_size}_pnum{partition_num}_run{run}"
+    return f"cmaes_psize{partition_size}_pnum{partition_num}_run{run}"
 
 
 async def run_graph(
