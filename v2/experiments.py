@@ -1,8 +1,4 @@
-from experiment_settings import (
-    NUM_EVALUATIONS,
-    DE_PARAMS,
-    GRAPH_PARAMS,
-)
+from experiment_settings import NUM_EVALUATIONS, DE_PARAMS, GRAPH_PARAMS, CMAES_PARAMS
 import argparse
 from typing import List
 from environment import Environment
@@ -14,6 +10,7 @@ from make_graph import make_graph
 from partition import partition
 from graph import Graph
 from parse_runs_arg import parse_runs_arg
+import cmaes_program
 
 
 def graph_database_name(
@@ -37,6 +34,14 @@ def de_database_name(
     partition_num: int,
 ) -> str:
     return f"de_p{population_size}_cr{crossover_probability}_f{differential_weight}_psize{partition_size}_pnum{partition_num}_run{run}"
+
+
+def cmaes_database_name(
+    run: int,
+    partition_size: int,
+    partition_num: int,
+) -> str:
+    return f"de_psize{partition_size}_pnum{partition_num}_run{run}"
 
 
 async def run_graph(
@@ -186,6 +191,40 @@ async def run_de_all(
                     num_evaluations=num_evaluations,
                     run=run,
                 )
+
+
+async def run_cmaes(
+    rng_seed: int,
+    graph: Graph,
+    environments: List[Environment],
+    database_directory: str,
+    cmaes_params_i: int,
+    num_simulators: int,
+    partition_num: int,
+    num_evaluations: int,
+    run: int,
+) -> None:
+    partition_size = CMAES_PARAMS[cmaes_params_i][0]
+
+    logging.info(f"Running cmaes psize{partition_size} pnum{partition_num} run{run}")
+
+    used_envs = [environments[node.index] for node in graph.nodes]
+
+    await cmaes_program.Program().run(
+        database_name=os.path.join(
+            database_directory,
+            cmaes_database_name(
+                run=run,
+                partition_size=partition_size,
+                partition_num=partition_num,
+            ),
+        ),
+        headless=True,
+        rng_seed=rng_seed,
+        num_evaluations=num_evaluations,
+        environments=used_envs,
+        num_simulators=num_simulators,
+    )
 
 
 async def main() -> None:

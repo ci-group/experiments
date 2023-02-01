@@ -16,6 +16,8 @@ DE_PARAMS = [
     (50, 0.9, 0.2, 125),
 ]  # population_size, crossover_probability, differential_weight, partition_size
 
+CMAES_PARAMS = [(1,), (5,), (25,), (125,)]
+
 # Graph settings
 GRAPH_STD = 0.05
 GRAPH_PMIG = 0.5

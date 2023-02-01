@@ -12,7 +12,7 @@ from environment import Environment
 from bodies import make_bodies
 from environment_name import EnvironmentName
 import itertools
-from experiments import run_de
+from experiments import run_de, run_cmaes
 from graph import Graph, Node
 
 
@@ -77,6 +77,37 @@ async def run_de_all(
             )
 
 
+async def run_cmaes_all(
+    graph: Graph,
+    environments: List[Environment],
+    database_directory: str,
+    runs: List[int],
+    num_simulators: int,
+) -> None:
+    SEED_BASE = 196783254
+
+    cmaes_params_i = 0
+
+    num_partitions = round(len(graph.nodes) / 1)
+    num_evaluations = round(NUM_EVALUATIONS / num_partitions)
+
+    for run in runs:
+        for part_i, environment in enumerate(environments):
+            part = Graph(nodes=[Node(0, [])])
+
+            await run_cmaes(
+                rng_seed=(hash(SEED_BASE) + hash(0) + hash(run) + hash(part_i)),
+                graph=part,
+                environments=[environment],
+                database_directory=database_directory,
+                cmaes_params_i=cmaes_params_i,
+                num_simulators=num_simulators,
+                partition_num=part_i,
+                num_evaluations=num_evaluations,
+                run=run,
+            )
+
+
 async def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -108,7 +139,13 @@ async def main() -> None:
             num_simulators=args.num_simulators,
         )
     elif args.experiment == "cmaes":
-        raise NotImplementedError()
+        await run_cmaes_all(
+            graph=graph,
+            environments=environments,
+            runs=runs,
+            database_directory=args.database_directory,
+            num_simulators=args.num_simulators,
+        )
     else:
         raise NotImplementedError()
 
