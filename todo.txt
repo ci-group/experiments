@@ -6,5 +6,5 @@ generality measure for de
 
 
 ripper4 0-2
-ripper3 3-5
-ripper7 6-9
+ripper3 3-4
+ripper7 5-9
