@@ -166,30 +166,32 @@ class Program:
         logging.info("Opening database done.")
 
         # uncomment this if environment saving is broken in db
-        # names = EnvironmentNames([e.name for e in environments])
-        # logging.info(f"saving # envs: {len(names)}")
-        # from sqlalchemy.schema import DropTable
+        names = EnvironmentNames([e.name for e in environments])
+        for name in names:
+            name.clear_id()
+        logging.info(f"saving # envs: {len(names)}")
+        from sqlalchemy.schema import DropTable
 
-        # async with self.database.begin() as conn:
-        #     await conn.execute(
-        #         DropTable(EnvironmentNames.table.__table__, if_exists=True)
-        #     )
-        #     await conn.execute(
-        #         DropTable(EnvironmentNames.item_table.__table__, if_exists=True)
-        #     )
-        #     await conn.execute(
-        #         DropTable(EnvironmentName.table.__table__, if_exists=True)
-        #     )
-        #     await conn.commit()
-        # async with self.database.begin() as conn:
-        #     await EnvironmentNames.prepare_db(conn)
-        #     await conn.commit()
-        # async with AsyncSession(self.database) as ses:
-        #     async with ses.begin():
-        #         await names.to_db(ses)
-        #         await ses.commit()
-        # logging.info("Saving root done.")
-        # return
+        async with self.database.begin() as conn:
+            await conn.execute(
+                DropTable(EnvironmentNames.table.__table__, if_exists=True)
+            )
+            await conn.execute(
+                DropTable(EnvironmentNames.item_table.__table__, if_exists=True)
+            )
+            await conn.execute(
+                DropTable(EnvironmentName.table.__table__, if_exists=True)
+            )
+            await conn.commit()
+        async with self.database.begin() as conn:
+            await EnvironmentNames.prepare_db(conn)
+            await conn.commit()
+        async with AsyncSession(self.database) as ses:
+            async with ses.begin():
+                await names.to_db(ses)
+                await ses.commit()
+        logging.info("Saving root done.")
+        return
 
         logging.info("Creating database structure..")
         async with self.database.begin() as conn:
@@ -290,6 +292,8 @@ class Program:
             generation_index=0,
             performed_evaluations=len(eval_descrs),
         )
+        for e in environments:
+            e.name.clear_id()
         self.root = ProgramRoot(EnvironmentNames([e.name for e in environments]), state)
         async with AsyncSession(self.database) as ses:
             async with ses.begin():
