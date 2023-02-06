@@ -171,7 +171,7 @@ class Program:
         # async with AsyncSession(self.database) as ses:
         #     async with ses.begin():
         #         await names.to_db(ses)
-        #         ses.commit()
+        #         await ses.commit()
         # logging.info("Saving root done.")
         # return
 
