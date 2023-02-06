@@ -165,6 +165,14 @@ class Program:
         self.database = open_async_database_sqlite(database_name, create=True)
         logging.info("Opening database done.")
 
+        # uncomment this if environment saving is broken in db
+        # names = EnvironmentNames([e.name for e in environments])
+        # async with AsyncSession(self.database) as ses:
+        #     async with ses.begin():
+        #         await names.to_db(ses)
+        # logging.info("Saving root done.")
+        # return
+
         logging.info("Creating database structure..")
         async with self.database.begin() as conn:
             await ProgramRoot.prepare_db(conn)

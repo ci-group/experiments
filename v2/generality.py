@@ -158,7 +158,7 @@ async def measure_generality_graph(
         ]
         assert (
             len(individual)
-        ) == 1, "cannot find best individual for these parameters"
+        ) == 1, f"cannot find best individual for these parameters body {main_env.name.body_num} ruggedness {main_env.name.ruggedness_num} bowlness {main_env.name.bowlness_num}"
         best_params_id = int(individual.genotype)
         measures.append(
             XMeasureTable(
