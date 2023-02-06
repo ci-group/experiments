@@ -167,7 +167,7 @@ class Program:
 
         # uncomment this if environment saving is broken in db
         # names = EnvironmentNames([e.name for e in environments])
-        # logging.log(f"saving # envs: {len(names)}")
+        # logging.info(f"saving # envs: {len(names)}")
         # async with AsyncSession(self.database) as ses:
         #     async with ses.begin():
         #         await names.to_db(ses)
@@ -278,6 +278,7 @@ class Program:
         async with AsyncSession(self.database) as ses:
             async with ses.begin():
                 await self.root.to_db(ses)
+                await ses.commit()
         logging.info("Saving root done.")
 
     async def load_root(self) -> bool:
