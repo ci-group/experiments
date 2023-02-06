@@ -167,9 +167,11 @@ class Program:
 
         # uncomment this if environment saving is broken in db
         # names = EnvironmentNames([e.name for e in environments])
+        # print(len(names))
         # async with AsyncSession(self.database) as ses:
         #     async with ses.begin():
         #         await names.to_db(ses)
+        #         ses.commit()
         # logging.info("Saving root done.")
         # return
 
