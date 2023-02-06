@@ -219,6 +219,7 @@ async def run_graph_all(
 
     for run in runs:
         for graph_params_i in range(len(GRAPH_PARAMS)):
+            print(f"measuring graph run {run} params {graph_params_i}")
             await measure_generality_graph(
                 graph=graph,
                 environments=environments,
