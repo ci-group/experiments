@@ -204,7 +204,8 @@ async def run_cmaes(
     num_evaluations: int,
     run: int,
 ) -> None:
-    partition_size = CMAES_PARAMS[cmaes_params_i][0]
+    initial_std = CMAES_PARAMS[cmaes_params_i][0]
+    partition_size = CMAES_PARAMS[cmaes_params_i][1]
 
     logging.info(f"Running cmaes psize{partition_size} pnum{partition_num} run{run}")
 
@@ -224,6 +225,7 @@ async def run_cmaes(
         num_evaluations=num_evaluations,
         environments=used_envs,
         num_simulators=num_simulators,
+        initial_std=initial_std,
     )
 
 
