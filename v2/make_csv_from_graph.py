@@ -28,11 +28,11 @@ import os
 import graph_program
 import itertools
 
-database_directory = "paper_10jan"
+database_directory = "results/graph/opt"
 out_dir = database_directory + "_csvs"
-runs = [0, 6, 7]
-standard_deviation = 0.05
-migration_probability = 0.5
+runs = range(0, 10)
+standard_deviation = GRAPH_STD
+migration_probability = GRAPH_PMIG
 alpha1 = GRAPH_ALPHA1
 alpha2 = GRAPH_ALPHA2
 
