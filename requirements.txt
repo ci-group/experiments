@@ -1,2 +1,3 @@
 noise==1.2.2
 typed-argparse==0.2.7
+cma=3.3.0
