@@ -229,6 +229,43 @@ async def run_cmaes(
     )
 
 
+async def run_cmaes_all(
+    graph: Graph,
+    environments: List[Environment],
+    database_directory: str,
+    runs: List[int],
+    num_simulators: int,
+) -> None:
+    SEED_BASE = 196783129
+
+    for run in runs:
+        for cmaes_params_i in range(len(CMAES_PARAMS)):
+            partition_size = CMAES_PARAMS[cmaes_params_i][1]
+            num_partitions = round(len(graph.nodes) / partition_size)
+            num_evaluations = round(NUM_EVALUATIONS / num_partitions)
+
+            logging.info("Making partitions..")
+            partitions = partition(graph, environments, num_partitions)
+            logging.info("Done making partitions.")
+            for part_i, part in enumerate(partitions):
+                await run_cmaes(
+                    rng_seed=(
+                        hash(SEED_BASE)
+                        + hash(cmaes_params_i)
+                        + hash(run)
+                        + hash(part_i)
+                    ),
+                    graph=part,
+                    environments=environments,
+                    database_directory=database_directory,
+                    cmaes_params_i=cmaes_params_i,
+                    num_simulators=num_simulators,
+                    partition_num=part_i,
+                    num_evaluations=num_evaluations,
+                    run=run,
+                )
+
+
 async def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -242,6 +279,8 @@ async def main() -> None:
     parser.add_argument("-s", "--num_simulators", type=int, required=True)
 
     subparsers.add_parser("de")
+
+    subparsers.add_parser("cmaes")
 
     subparsers.add_parser("graph")
 
@@ -261,6 +300,14 @@ async def main() -> None:
         )
     elif args.experiment == "de":
         await run_de_all(
+            graph=graph,
+            environments=environments,
+            runs=runs,
+            database_directory=args.database_directory,
+            num_simulators=args.num_simulators,
+        )
+    elif args.experiment == "cmaes":
+        await run_cmaes_all(
             graph=graph,
             environments=environments,
             runs=runs,
