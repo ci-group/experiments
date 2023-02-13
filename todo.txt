@@ -8,6 +8,6 @@ ripper3 3-4
 ripper7 5-9
 
 CMAES
-ripper3 0-3
-ripper4 4-6
-ripper7 7-9
+ripper3 0-3 (parallel)
+ripper4 4-5 (parallel)
+ripper7 6-9 (parallel)
