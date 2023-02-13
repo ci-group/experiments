@@ -20,10 +20,8 @@ from revolve2.core.optimization.ea.population import (
     Parameters,
     SerializableMeasures,
 )
-from revolve2.core.optimization.ea.population.pop_list import replace_if_better
 from sqlalchemy.ext.asyncio import AsyncEngine
 from bodies import make_cpg_network_structure
-from revolve2.core.optimization.ea.algorithms import de_offspring, bounce_parameters
 from evaluator import Evaluator, EvaluationDescription
 import cma
 
@@ -250,7 +248,7 @@ class Program:
         self.opt.disp()
 
         m = Measures()
-        m["combined_fitness"] = self.opt.result.fbest
+        m["combined_fitness"] = -self.opt.result.fbest
         m["fitnesses"] = []
         self.root.program_state.mean = Individual(
             genotype=Genotype(self.opt.result.xbest), measures=m
