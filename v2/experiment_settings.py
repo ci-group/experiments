@@ -18,9 +18,9 @@ DE_PARAMS = [
 
 CMAES_PARAMS = [
     (0.5, 1),
+    (0.5, 125),
     (0.5, 5),
     (0.5, 25),
-    (0.5, 125),
 ]  # initial std, partition_size
 
 # Graph settings

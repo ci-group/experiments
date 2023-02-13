@@ -1,10 +1,13 @@
 - Reality gap
 - Evolvability
 
-generality measure for de
 
-
-
+GRAPH
 ripper4 0-2
 ripper3 3-4
 ripper7 5-9
+
+CMAES
+ripper3 0-3
+ripper4 4-6
+ripper7 7-9
