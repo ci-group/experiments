@@ -172,7 +172,7 @@ class Program:
         )
 
         await self.measure([initial_mean])
-        self.performed_evaluations += 1
+        self.performed_evaluations += 1 * len(self.environments)
 
         # TODO seed
         options = cma.CMAOptions()
@@ -240,7 +240,7 @@ class Program:
             for s in self.opt.ask()
         ]
         await self.measure(offspring)
-        self.performed_evaluations += len(offspring)
+        self.performed_evaluations += len(offspring) * len(self.environments)
         self.opt.tell(
             [o.genotype for o in offspring],
             [-i.measures["combined_fitness"] for i in offspring],
