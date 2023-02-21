@@ -11,13 +11,13 @@ NUM_EVALUATIONS = 300000
 # DE settings
 DE_PARAMS = [
     (50, 0.9, 0.2, 1),
+    (50, 0.9, 0.2, 125),
     (50, 0.9, 0.2, 5),
     (50, 0.9, 0.2, 25),
-    (50, 0.9, 0.2, 125),
 ]  # population_size, crossover_probability, differential_weight, partition_size
 
 CMAES_PARAMS = [
-    # (0.5, 1),
+    (0.5, 1),
     (0.5, 125),
     (0.5, 5),
     (0.5, 25),

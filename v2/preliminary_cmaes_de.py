@@ -53,11 +53,11 @@ async def run_de_all(
     runs: List[int],
     num_simulators: int,
 ) -> None:
-    SEED_BASE = 196783254
+    SEED_BASE = 196783256
 
     de_params_i = 0
 
-    num_partitions = round(len(graph.nodes) / 1)
+    num_partitions = 1  # round(len(graph.nodes) / 1)
     num_evaluations = round(NUM_EVALUATIONS / num_partitions)
 
     for run in runs:
@@ -84,11 +84,11 @@ async def run_cmaes_all(
     runs: List[int],
     num_simulators: int,
 ) -> None:
-    SEED_BASE = 196783254
+    SEED_BASE = 196783255
 
     cmaes_params_i = 0
 
-    num_partitions = round(len(graph.nodes) / 1)
+    num_partitions = 1  # round(len(graph.nodes) / 1)
     num_evaluations = round(NUM_EVALUATIONS / num_partitions)
 
     for run in runs:
