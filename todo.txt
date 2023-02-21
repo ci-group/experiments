@@ -11,3 +11,6 @@ CMAES
 ripper3 0-3 (parallel)
 ripper4 4-5 (parallel)
 ripper7 6-9 (parallel)
+
+PRELIM GENERALIST
+rippre7 de

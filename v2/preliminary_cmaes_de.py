@@ -55,7 +55,7 @@ async def run_de_all(
 ) -> None:
     SEED_BASE = 196783256
 
-    de_params_i = 0
+    de_params_i = 1
 
     num_partitions = 1  # round(len(graph.nodes) / 1)
     num_evaluations = round(NUM_EVALUATIONS / num_partitions)
@@ -86,7 +86,7 @@ async def run_cmaes_all(
 ) -> None:
     SEED_BASE = 196783255
 
-    cmaes_params_i = 0
+    cmaes_params_i = 1
 
     num_partitions = 1  # round(len(graph.nodes) / 1)
     num_evaluations = round(NUM_EVALUATIONS / num_partitions)
