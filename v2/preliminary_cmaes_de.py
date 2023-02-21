@@ -6,6 +6,8 @@ from experiment_settings import (
     RUGGEDNESS_RANGE,
     BOWLNESS_RANGE,
     NUM_EVALUATIONS,
+    DE_PARAMS,
+    CMAES_PARAMS,
 )
 from typing import List
 from environment import Environment
@@ -14,6 +16,7 @@ from environment_name import EnvironmentName
 import itertools
 from experiments import run_de, run_cmaes
 from graph import Graph, Node
+from partition import partition as make_partitions
 
 
 def find_index(in_envs: List[Environment], env_name: EnvironmentName) -> int:
@@ -57,17 +60,22 @@ async def run_de_all(
 
     de_params_i = 1
 
-    num_partitions = 1  # round(len(graph.nodes) / 1)
+    partition_size = DE_PARAMS[de_params_i][3]
+    num_partitions = round(len(graph.nodes) / partition_size)
     num_evaluations = round(NUM_EVALUATIONS / num_partitions)
 
-    for run in runs:
-        for part_i, environment in enumerate(environments):
-            part = Graph(nodes=[Node(0, [])])
+    logging.info("Making partitions..")
+    partitions = make_partitions(graph, environments, num_partitions)
+    logging.info("Done making partitions.")
 
+    for run in runs:
+        for part_i, part in enumerate(partitions):
             await run_de(
-                rng_seed=(hash(SEED_BASE) + hash(0) + hash(run) + hash(part_i)),
+                rng_seed=(
+                    hash(SEED_BASE) + hash(de_params_i) + hash(run) + hash(part_i)
+                ),
                 graph=part,
-                environments=[environment],
+                environments=environments,
                 database_directory=database_directory,
                 de_params_i=de_params_i,
                 num_simulators=num_simulators,
@@ -88,17 +96,22 @@ async def run_cmaes_all(
 
     cmaes_params_i = 1
 
-    num_partitions = 1  # round(len(graph.nodes) / 1)
+    partition_size = CMAES_PARAMS[cmaes_params_i][1]
+    num_partitions = round(len(graph.nodes) / partition_size)
     num_evaluations = round(NUM_EVALUATIONS / num_partitions)
 
-    for run in runs:
-        for part_i, environment in enumerate(environments):
-            part = Graph(nodes=[Node(0, [])])
+    logging.info("Making partitions..")
+    partitions = make_partitions(graph, environments, num_partitions)
+    logging.info("Done making partitions.")
 
+    for run in runs:
+        for part_i, part in enumerate(partitions):
             await run_cmaes(
-                rng_seed=(hash(SEED_BASE) + hash(0) + hash(run) + hash(part_i)),
+                rng_seed=(
+                    hash(SEED_BASE) + hash(cmaes_params_i) + hash(run) + hash(part_i)
+                ),
                 graph=part,
-                environments=[environment],
+                environments=environments,
                 database_directory=database_directory,
                 cmaes_params_i=cmaes_params_i,
                 num_simulators=num_simulators,
