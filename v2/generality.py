@@ -5,7 +5,12 @@ from make_graph import make_graph
 from graph import Graph
 from typing import List
 from environment import Environment
-from experiment_settings import GRAPH_PARAMS, RUGGEDNESS_RANGE, BOWLNESS_RANGE
+from experiment_settings import (
+    GRAPH_PARAMS,
+    RUGGEDNESS_RANGE,
+    BOWLNESS_RANGE,
+    CMAES_PARAMS,
+)
 from environment_name import EnvironmentName
 from bodies import make_bodies, make_cpg_network_structure
 import itertools
@@ -20,6 +25,8 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy import Integer, Float, Column
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
+from partition import partition as make_partitions
+import cmaes_program
 
 
 DbBase = declarative_base()
@@ -232,6 +239,127 @@ async def run_graph_all(
             )
 
 
+async def measure_generality_cmaes(
+    graph: Graph,
+    environments: List[Environment],
+    database_directory: str,
+    run: int,
+    num_simulators: int,
+    cmaes_params_i: int,
+    env_indices: List[int],
+    database_directory_out: str,
+) -> None:
+    initial_std = CMAES_PARAMS[cmaes_params_i][0]
+    partition_size = CMAES_PARAMS[cmaes_params_i][1]
+
+    num_partitions = len(environments) // partition_size
+
+    logging.info("Making partitions..")
+    partitions = make_partitions(graph, environments, num_partitions)
+    logging.info("Done making partitions.")
+
+    # find partition for each env index
+    env_partitions = []
+    for env_index in env_indices:
+        for i, partition in enumerate(partitions):
+            if env_index in [node.index for node in partition.nodes]:
+                env_partitions.append(i)
+                break
+
+    # load genotypes
+    genotypes = []
+    for env_index, partition_num in zip(env_indices, env_partitions):
+        database_name = os.path.join(
+            database_directory,
+            experiments.cmaes_database_name(
+                run=run, partition_size=partition_size, partition_num=partition_num
+            ),
+        )
+
+        db = open_database_sqlite(database_name)
+
+        df = pandas.read_sql(
+            select(
+                cmaes_program.ProgramState.table,
+                cmaes_program.Individual.table,
+            ).filter(
+                (
+                    cmaes_program.ProgramState.table.mean
+                    == cmaes_program.Individual.table.id
+                )
+            ),
+            db,
+        )
+        params_id = int(df[df.generation_index == df.generation_index.max()].genotype)
+
+        db2 = open_async_database_sqlite(database_name)
+        async with AsyncSession(db2) as session:
+            genotype = await cmaes_program.Genotype.from_db(session, params_id)
+            genotypes.append(genotype)
+
+    cpg_network_structure = make_cpg_network_structure()
+    evaluator = Evaluator(
+        cpg_network_structure,
+        headless=True,
+        num_simulators=num_simulators,
+    )
+
+    measures: List[XMeasureTable] = []
+
+    evaldescrs: List[EvaluationDescription] = []
+    for genotype in genotypes:
+        for env_i in env_indices:
+            evaldescrs.append(EvaluationDescription(environments[env_i], genotype))
+    fitnesses = await evaluator.evaluate(evaldescrs)
+
+    f_i = 0
+    for genotype, env_index in zip(genotypes, env_indices):
+        for other_envs_i in env_indices:
+            measures.append(
+                XMeasureTable(
+                    solution_env_i=env_index,
+                    measured_env_i=other_envs_i,
+                    fitness=fitnesses[f_i],
+                )
+            )
+            f_i += 1
+
+    database_name_out = os.path.join(
+        database_directory_out, f"cmaes_psize{partition_size}_run{run}"
+    )
+
+    outdb = open_database_sqlite(database_name_out, create=True)
+    DbBase.metadata.create_all(outdb)
+    with Session(outdb) as ses:
+        ses.add_all(measures)
+        ses.commit()
+
+
+async def run_cmaes_all(
+    graph: Graph,
+    environments: List[Environment],
+    database_directory: str,
+    runs: List[int],
+    num_simulators: int,
+    database_directory_out: str,
+) -> None:
+    env_indices = select_environments(environments)
+
+    for run in runs:
+        for cmaes_params_i in range(len(CMAES_PARAMS)):
+            print(f"measuring cmaes run {run} params {cmaes_params_i}")
+            await measure_generality_cmaes(
+                graph=graph,
+                environments=environments,
+                database_directory=database_directory,
+                run=run,
+                num_simulators=num_simulators,
+                cmaes_params_i=cmaes_params_i,
+                env_indices=env_indices,
+                database_directory_out=database_directory_out,
+            )
+
+
 async def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -245,7 +373,7 @@ async def main() -> None:
     subparsers = parser.add_subparsers(dest="experiment", required=True)
     parser.add_argument("-s", "--num_simulators", type=int, required=True)
 
-    subparsers.add_parser("de")
+    subparsers.add_parser("cmaes")
 
     subparsers.add_parser("graph")
 
@@ -264,14 +392,15 @@ async def main() -> None:
             num_simulators=args.num_simulators,
             database_directory_out=args.database_directory_out,
         )
-    # elif args.experiment == "de":
-    #     await run_de_all(
-    #         graph=graph,
-    #         environments=environments,
-    #         runs=runs,
-    #         database_directory=args.database_directory,
-    #         num_simulators=args.num_simulators,
-    #     )
+    elif args.experiment == "cmaes":
+        await run_cmaes_all(
+            graph=graph,
+            environments=environments,
+            runs=runs,
+            database_directory=args.database_directory,
+            num_simulators=args.num_simulators,
+            database_directory_out=args.database_directory_out,
+        )
     else:
         raise NotImplementedError()
 
