@@ -36,10 +36,18 @@ GRAPH_PARAMS = [
         GRAPH_PMIG,
         GRAPH_ALPHA1,
         GRAPH_ALPHA2,
-        i[0],
-        i[1],
+        3.0,
+        0.125,
     )
-    for i in itertools.product(THETA1S, THETA2S)
+    # (
+    #     GRAPH_STD,
+    #     GRAPH_PMIG,
+    #     GRAPH_ALPHA1,
+    #     GRAPH_ALPHA2,
+    #     i[0],
+    #     i[1],
+    # )
+    # for i in itertools.product(THETA1S, THETA2S)
 ]  # standard deviation, migration_probability, alpha1, alpha2, theta1, theta2
 
 # Terrain parameters
