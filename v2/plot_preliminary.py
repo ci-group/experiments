@@ -40,12 +40,12 @@ def plot_de(ax: Axes, database_directory: str, runs: List[int], num_envs: int) -
         crossover_probability,
         differential_weight,
         partition_size,
-    ) = DE_PARAMS[0]
+    ) = DE_PARAMS[1]
 
     dfs_per_run_per_partition: List[List[pandas.DataFrame]] = []
     for run in runs:
         dfs_per_partition: List[pandas.DataFrame] = []
-        for partition_num in range(num_envs):
+        for partition_num in range(num_envs // partition_size):
             db = open_database_sqlite(
                 os.path.join(
                     database_directory,
@@ -98,7 +98,7 @@ def plot_de(ax: Axes, database_directory: str, runs: List[int], num_envs: int) -
 
     # for i, run in enumerate(fitness_per_run):
     #     run.to_csv(
-    #         f"results/preliminary/opt_csvs/preliminary_de_p{population_size}_cr{crossover_probability}_f{differential_weight}_run{i}.csv"
+    #         f"results/preliminary/opt_csvs/preliminary_de_p{population_size}_cr{crossover_probability}_f{differential_weight}_psize{partition_size}_run{i}.csv"
     #     )
 
     fitnesses_per_run_concat = pandas.concat(fitness_per_run)
@@ -131,7 +131,7 @@ def plot_de(ax: Axes, database_directory: str, runs: List[int], num_envs: int) -
     plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")
     describe[["mean"]].rename(
         columns={
-            "mean": f"DE full specialist (p={population_size}, cr={crossover_probability}, f={differential_weight})"
+            "mean": f"DE full specialist (p={population_size}, cr={crossover_probability}, f={differential_weight}, psize={partition_size})"
         }
     ).plot(ax=ax, color=plot_color)
 
@@ -142,12 +142,12 @@ def plot_cmaes(
     (
         initial_std,
         partition_size,
-    ) = CMAES_PARAMS[0]
+    ) = CMAES_PARAMS[1]
 
     dfs_per_run_per_partition: List[List[pandas.DataFrame]] = []
     for run in runs:
         dfs_per_partition: List[pandas.DataFrame] = []
-        for partition_num in range(num_envs):
+        for partition_num in range(num_envs // partition_size):
             db = open_database_sqlite(
                 os.path.join(
                     database_directory,
@@ -192,7 +192,10 @@ def plot_cmaes(
         fitness_per_run.append(combined_partition_fitnesses.reset_index())
 
     # for i, run in enumerate(fitness_per_run):
-    #     run.to_csv(f"results/preliminary/opt_csvs/cmaes_run{i}.csv")
+    #     # run["combined_fitness"] *= -1
+    #     run.to_csv(
+    #         f"results/preliminary/opt_csvs/preliminary_cmaes_std{initial_std}_psize{partition_size}_run{i}.csv"
+    #     )
 
     fitnesses_per_run_concat = pandas.concat(fitness_per_run)
 
@@ -215,8 +218,6 @@ def plot_cmaes(
         how="left",
     )[["evaluation", "combined_fitness"]]
 
-    with_evals["combined_fitness"] *= -1  # accidentally saved negative fitnesses in db
-
     describe = with_evals.groupby(by="evaluation").describe()["combined_fitness"]
     mean = describe[["mean"]].values.squeeze()
     std = describe[["std"]].values.squeeze()
@@ -225,7 +226,9 @@ def plot_cmaes(
 
     plt.fill_between(eval_range, mean - std, mean + std, color=f"{plot_color}33")
     describe[["mean"]].rename(
-        columns={"mean": f"CMAES full specialist (std={initial_std})"}
+        columns={
+            "mean": f"CMAES full specialist (std={initial_std}, psize={partition_size})"
+        }
     ).plot(ax=ax, color=plot_color)
 
 
