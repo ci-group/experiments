@@ -28,8 +28,8 @@ GRAPH_STD = 0.05
 GRAPH_PMIG = 0.5
 GRAPH_ALPHA1 = 30.0
 GRAPH_ALPHA2 = 3.0
-THETA1S = [0.0, 1.0, 2.0]
-THETA2S = [0.25, 0.5, float("inf")]
+THETA1S = [3.0]  # [0.0, 1.0, 2.0]
+THETA2S = [0.125]  # [0.25, 0.5, float("inf")]
 GRAPH_PARAMS = [
     (
         GRAPH_STD,
