@@ -33,11 +33,11 @@ THETA2S = [0.125]  # [0.25, 0.5, float("inf")]
 GRAPH_PARAMS = [
     (
         GRAPH_STD,
-        GRAPH_PMIG,
+        0.0,
         GRAPH_ALPHA1,
         GRAPH_ALPHA2,
-        3.0,
-        0.125,
+        0.0,
+        1.0,
     )
     # (
     #     GRAPH_STD,
