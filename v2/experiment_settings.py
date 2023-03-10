@@ -17,8 +17,8 @@ DE_PARAMS = [
 ]  # population_size, crossover_probability, differential_weight, partition_size
 
 CMAES_PARAMS = [
-    (0.5, 1),
-    (0.5, 125),
+    # (0.5, 1),
+    # (0.5, 125),
     (0.5, 5),
     (0.5, 25),
 ]  # initial std, partition_size
