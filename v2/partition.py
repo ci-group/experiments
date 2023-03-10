@@ -25,13 +25,17 @@ def partition(
     elif num_partitions == 1:
         return [graph]
     elif num_partitions == 25:
-        subgraphs: List[List[Node]] = [[]] * 25
+        subgraphs: List[List[Node]] = []
+        for _ in range(25):
+            subgraphs.append([])
         with Path(__file__).with_name("partition_psize5.txt").open("r") as f:
             reader = csv.reader(f, delimiter=",")
             for row in reader:
                 subgraphs[int(row[0])].append(graph.nodes[int(row[1])])
     elif num_partitions == 5:
-        subgraphs: List[List[Node]] = [[]] * 5
+        subgraphs: List[List[Node]] = []
+        for _ in range(5):
+            subgraphs.append([])
         with Path(__file__).with_name("partition_psize25.txt").open("r") as f:
             reader = csv.reader(f, delimiter=",")
             for row in reader:
@@ -41,9 +45,10 @@ def partition(
 
     for subgraph in subgraphs:
         for node in subgraph:
-            node.neighbor = [
+            node.neighbours = [
                 neighbor for neighbor in node.neighbours if neighbor in subgraph
             ]
+
     return [Graph(subgraph) for subgraph in subgraphs]
 
 
