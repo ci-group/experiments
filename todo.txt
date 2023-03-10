@@ -19,3 +19,7 @@ ripper4 cmaes
 extra & pmig0
 ripper3 0-4
 ripper7 5-9
+
+CMAES21
+ripper3 0-4 (parallel)
+ripper7 5-9 (parallel)
