@@ -15,3 +15,11 @@ ripper7 6-9 (parallel)
 PRELIM GENERALIST
 ripper7 de
 ripper4 cmaes
+
+extra & pmig0
+ripper3 0-4
+ripper7 5-9
+
+generality for 5-9
+currently runnign pimig0
+then also generality for that
