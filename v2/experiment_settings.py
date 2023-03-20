@@ -49,3 +49,6 @@ RUGGEDNESS_RANGE = np.arange(0.0, 0.5, 0.1)
 BOWLNESS_RANGE = np.arange(0.0, 2.5, 0.5)
 
 ROBOT_INITIAL_Z_OFFSET = 0.5
+
+# Random graph
+RANDOM_GRAPH_CONNECT_PROB = 0.2

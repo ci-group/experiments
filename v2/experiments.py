@@ -6,11 +6,12 @@ import de_program
 import os
 import graph_program
 import logging
-from make_graph import make_graph
+from make_graph import make_graph, make_random_graph
 from partition import partition
 from graph import Graph
 from parse_runs_arg import parse_runs_arg
 import cmaes_program
+import numpy as np
 
 
 def graph_database_name(
@@ -290,7 +291,9 @@ async def main() -> None:
     runs = parse_runs_arg(args.runs)
     logging.info(f"Running runs {runs} (including last one).")
 
-    graph, environments = make_graph()
+    # graph, environments = make_graph()
+    rng = np.random.Generator(np.random.PCG64(534134345))
+    graph, environments = make_random_graph(rng)
 
     if args.experiment == "graph":
         await run_graph_all(

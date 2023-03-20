@@ -25,6 +25,5 @@ ripper3 0-4 (parallel)
 ripper7 5-9 (parallel)
 
 GRAPH t1=4.0 t2=0.0625
-ripper3 0-2
-ripper4 3-5
-ripper7 6-9
+ripper3 0-4
+ripper7 5-9
