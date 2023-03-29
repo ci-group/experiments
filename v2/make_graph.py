@@ -59,7 +59,8 @@ def make_graph() -> Tuple[Graph, List[Environment]]:
     return Graph(nodes), envs
 
 
-def make_random_graph(rng: np.random.Generator) -> Tuple[Graph, List[Environment]]:
+def make_random_graph() -> Tuple[Graph, List[Environment]]:
+    rng = np.random.Generator(np.random.PCG64(534134345))
     bodies, dof_maps = make_bodies()
 
     nodes: List[Node] = []
@@ -86,10 +87,17 @@ def make_random_graph(rng: np.random.Generator) -> Tuple[Graph, List[Environment
                 )
                 nodes[-1].env = envs[-1]
 
-    for i, node1 in enumerate(nodes):
-        for node2 in nodes[i + 1 :]:
-            if rng.random() < RANDOM_GRAPH_CONNECT_PROB:
-                node1.neighbours.append(node2)
-                node2.neighbours.append(node1)
+    for _ in range(125 * 20):
+        while (node1 := nodes[rng.integers(0, len(nodes))]) is (
+            node2 := nodes[rng.integers(0, len(nodes))]
+        ):
+            pass
+        if max(
+            len(node1.neighbours), len(node2.neighbours)
+        ) == 0 or rng.random() < 100 / (
+            max(len(node1.neighbours), len(node2.neighbours)) ** 2
+        ):
+            node1.neighbours.append(node2)
+            node2.neighbours.append(node1)
 
     return Graph(nodes), envs

@@ -292,8 +292,7 @@ async def main() -> None:
     logging.info(f"Running runs {runs} (including last one).")
 
     # graph, environments = make_graph()
-    rng = np.random.Generator(np.random.PCG64(534134345))
-    graph, environments = make_random_graph(rng)
+    graph, environments = make_random_graph()
 
     if args.experiment == "graph":
         await run_graph_all(
