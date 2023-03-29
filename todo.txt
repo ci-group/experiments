@@ -27,3 +27,7 @@ ripper7 5-9 (parallel)
 GRAPH t1=4.0 t2=0.0625
 ripper3 0-4
 ripper7 5-9
+
+RANDOM GRAPH
+ripper3 0-4
+ripper7 5-9
