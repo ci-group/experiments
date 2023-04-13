@@ -36,7 +36,7 @@ GRAPH_PARAMS = [
         GRAPH_PMIG,
         GRAPH_ALPHA1,
         GRAPH_ALPHA2,
-        0,
+        0.0,
         float("inf"),
     ),
     (
@@ -52,7 +52,7 @@ GRAPH_PARAMS = [
         GRAPH_PMIG,
         GRAPH_ALPHA1,
         GRAPH_ALPHA2,
-        4,
+        4.0,
         0.0625,
     )
     # for i in itertools.product(THETA1S, THETA2S)
