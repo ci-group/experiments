@@ -1,7 +1,7 @@
 import logging
 import argparse
 from parse_runs_arg import parse_runs_arg
-from make_graph import make_graph
+from make_graph import make_graph, make_random_graph
 from graph import Graph
 from typing import List
 from environment import Environment
@@ -381,7 +381,8 @@ async def main() -> None:
     runs = parse_runs_arg(args.runs)
     logging.info(f"Running runs {runs} (including last one).")
 
-    graph, environments = make_graph()
+    # graph, environments = make_graph()
+    graph, environments = make_random_graph()
 
     if args.experiment == "graph":
         await run_graph_all(
